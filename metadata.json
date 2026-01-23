@@ -1,0 +1,5 @@
+{
+  "name": "LinguaTale - AI Language Story Generator",
+  "description": "Generate CEFR-level appropriate stories for language learners in 24 EU languages with strict linguistic constraints.",
+  "requestFramePermissions": []
+}
