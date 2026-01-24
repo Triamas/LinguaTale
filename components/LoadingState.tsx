@@ -1,54 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import React from 'react';
 
-export const LoadingState: React.FC<{ message?: string }> = ({ message = "Crafting your story..." }) => {
-  const [progress, setProgress] = useState(10);
-
-  useEffect(() => {
-    // Simulate progress: Fast at start, slows down as it reaches 90%
-    // This provides psychological reassurance without needing real-time backend events.
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev; // Stop at 90% until complete
-        
-        // Calculate remaining distance to 90%
-        const remaining = 90 - prev;
-        
-        // Move 10% of the remaining distance, or at least 0.5% to keep it moving slightly
-        const step = Math.max(remaining * 0.1, 0.5); 
-        
-        return Math.min(prev + step, 90);
-      });
-    }, 800);
-
-    return () => clearInterval(interval);
-  }, []);
-
+export const LoadingState: React.FC<{ message?: string }> = ({ message }) => {
   return (
-    <div className="flex w-full flex-col items-center justify-center space-y-6 py-16 animate-fade-in">
-      <div className="relative">
-        <div className="absolute inset-0 animate-ping rounded-full bg-indigo-100 opacity-75"></div>
-        <div className="relative rounded-full bg-white p-4 shadow-lg ring-1 ring-gray-900/5">
-          <Sparkles className="h-8 w-8 animate-pulse text-indigo-600" />
+    <div className="w-full max-w-3xl mx-auto overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-gray-800 animate-fade-in">
+      {/* Skeleton Header */}
+      <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-gray-800 dark:bg-gray-800/50">
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="flex gap-2">
+             <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+             <div className="h-5 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          </div>
         </div>
       </div>
-      
-      <div className="flex flex-col items-center space-y-3 w-full max-w-xs">
-        <p className="text-lg font-medium text-gray-700 text-center">
-          {message}
-        </p>
-        
-        {/* Progress Bar Container */}
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-          <div 
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-700 ease-out rounded-full shadow-sm"
-            style={{ width: `${progress}%` }}
-          />
+
+      <div className="px-6 py-8 sm:px-8 space-y-8">
+        {/* Title Skeleton */}
+        <div className="flex justify-center">
+          <div className="h-8 w-2/3 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        </div>
+
+        {/* Paragraph Skeletons */}
+        <div className="space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div className="h-4 w-11/12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div className="h-4 w-4/5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            </div>
+          ))}
         </div>
         
-        <p className="text-xs text-gray-400 font-medium font-mono">
-          {Math.floor(progress)}%
-        </p>
+        {/* Footer / Loading Message */}
+        <div className="flex flex-col items-center justify-center pt-4 space-y-3">
+          <div className="h-1 w-1/3 rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-30 animate-pulse" />
+          <p className="text-sm font-medium text-gray-400 dark:text-gray-500 animate-pulse">
+            {message || "Crafting your story..."}
+          </p>
+        </div>
       </div>
     </div>
   );

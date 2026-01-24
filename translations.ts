@@ -38,7 +38,16 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     load: "Load",
     continueReading: "Continue Reading",
     bookmarked: "Bookmarked",
-    bookmarkStory: "Bookmark this story"
+    bookmarkStory: "Bookmark this story",
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    enableQuiz: "Enable Quiz",
+    darkMode: "Dark Mode",
+    flashCards: "Flash Cards",
+    enableFlashCards: "Enable Flash Cards",
+    noVocabFound: "No highlighted vocabulary found in this story.",
+    clickToFlip: "Click to reveal translation"
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -76,7 +85,16 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     load: "Lataa",
     continueReading: "Jatka lukemista",
     bookmarked: "Tallennettu",
-    bookmarkStory: "Tallenna tarina"
+    bookmarkStory: "Tallenna tarina",
+    theme: "Teema",
+    light: "Vaalea",
+    dark: "Tumma",
+    enableQuiz: "Näytä visa",
+    darkMode: "Tumma tila",
+    flashCards: "Sanastokortit",
+    enableFlashCards: "Näytä sanastokortit",
+    noVocabFound: "Tästä tarinasta ei löytynyt korostettua sanastoa.",
+    clickToFlip: "Klikkaa nähdäksesi käännös"
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -114,6 +132,15 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     load: "Mở",
     continueReading: "Đọc tiếp",
     bookmarked: "Đã lưu",
-    bookmarkStory: "Lưu câu chuyện này"
+    bookmarkStory: "Lưu câu chuyện này",
+    theme: "Giao diện",
+    light: "Sáng",
+    dark: "Tối",
+    enableQuiz: "Bật bài kiểm tra",
+    darkMode: "Chế độ tối",
+    flashCards: "Thẻ ghi nhớ",
+    enableFlashCards: "Bật thẻ ghi nhớ",
+    noVocabFound: "Không tìm thấy từ vựng nổi bật trong truyện này.",
+    clickToFlip: "Nhấn để xem nghĩa"
   }
 };

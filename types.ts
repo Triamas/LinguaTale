@@ -7,6 +7,8 @@ export type Language =
 
 export type AppLanguage = "English" | "Finnish" | "Vietnamese";
 
+export type Theme = "light" | "dark";
+
 export type CEFRLevel = 
   | "A1.1" | "A1.2" | "A1.3" 
   | "A2.1" | "A2.2" 
@@ -35,6 +37,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
+  explanation?: string;
 }
 
 export interface StoryResponse {

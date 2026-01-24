@@ -38,7 +38,7 @@ export const LANGUAGE_LABELS: Record<AppLanguage, Record<Language, string>> = {
 
 export const LANGUAGE_THEMES: Record<Language, string> = {
   "Bulgarian": "from-green-600 to-red-600",
-  "Chinese": "from-red-700 to-yellow-600",
+  "Chinese": "from-red-600 to-yellow-500",
   "Croatian": "from-red-600 to-blue-700",
   "Czech": "from-blue-700 to-red-600",
   "Danish": "from-red-600 to-red-800",
@@ -52,8 +52,8 @@ export const LANGUAGE_THEMES: Record<Language, string> = {
   "Hungarian": "from-red-600 to-green-700",
   "Irish": "from-green-600 to-orange-500",
   "Italian": "from-green-600 to-red-600",
-  "Japanese": "from-red-700 to-rose-400",
-  "Korean": "from-blue-600 to-red-600",
+  "Japanese": "from-red-700 to-red-500",
+  "Korean": "from-red-600 to-blue-600",
   "Latvian": "from-red-900 to-red-700",
   "Lithuanian": "from-yellow-500 to-green-700",
   "Maltese": "from-red-600 to-gray-300",
