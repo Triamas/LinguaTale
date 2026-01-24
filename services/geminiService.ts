@@ -1,145 +1,242 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { CEFRLevel, Language, StoryResponse, StoryStyle, AppLanguage } from "../types";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const responseSchema: Schema = {
+// The response schema for the generated story content.
+const responseSchema = {
   type: Type.OBJECT,
   properties: {
     title: {
       type: Type.STRING,
-      description: "The title of the story (or chapter) in the target language."
+      description: "The title of the story in the target language."
     },
     content: {
       type: Type.STRING,
-      description: "The main body of the story in the target language. Use \\n\\n to separate paragraphs."
+      description: "The main body of the story in the target language. Use {word|translation} for highlights. MUST contain multiple paragraphs separated by newlines."
     },
     englishTranslation: {
       type: Type.STRING,
-      description: "A full translation of the story in the requested OUTPUT LANGUAGE."
+      description: "A full translation of the story."
     },
     quiz: {
       type: Type.ARRAY,
-      description: "A reading comprehension quiz with 3 questions in the TARGET LANGUAGE.",
       items: {
         type: Type.OBJECT,
         properties: {
-          question: { type: Type.STRING, description: "The question in the TARGET LANGUAGE (not English)." },
-          options: { 
-            type: Type.ARRAY, 
-            description: "3 possible answers in the TARGET LANGUAGE.",
-            items: { type: Type.STRING } 
-          },
-          correctAnswer: { type: Type.STRING, description: "The correct answer string, which must match one of the options." }
+          question: { type: Type.STRING },
+          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+          correctAnswer: { type: Type.STRING }
         },
         required: ["question", "options", "correctAnswer"]
       }
+    },
+    vocabularyMetadata: {
+      type: Type.OBJECT,
+      description: "A mapping of every highlighted {word} to its verified CEFR level and reason for selection.",
+      properties: {
+        word: {
+           type: Type.OBJECT,
+           properties: {
+             level: { type: Type.STRING },
+             reason: { type: Type.STRING }
+           }
+        }
+      },
+      additionalProperties: {
+        type: Type.OBJECT,
+        properties: {
+          level: { type: Type.STRING },
+          reason: { type: Type.STRING }
+        }
+      }
     }
   },
-  required: ["title", "content", "englishTranslation", "quiz"]
+  required: ["title", "content", "englishTranslation", "quiz", "vocabularyMetadata"]
 };
 
-// Helper to get specific vocabulary count based on level
 const getVocabCount = (level: CEFRLevel): string => {
-  if (level.startsWith("A1")) return "20-25"; // High support for beginners
-  if (level.startsWith("A2")) return "15-20";
-  if (level.startsWith("B1")) return "15";
-  if (level.startsWith("B2")) return "10";
-  return "5-8"; // Minimal support for advanced
+  if (level.startsWith("A1")) return "25-35"; 
+  if (level.startsWith("A2")) return "20-28";
+  if (level.startsWith("B1")) return "18-24";
+  if (level.startsWith("B2")) return "15-20";
+  return "12-18"; 
 };
 
-// Helper to get strict grammatical and structural constraints
+/**
+ * Returns style-specific prompt instructions and temperature.
+ * Adjusts constraints based on CEFR level to ensure accessibility.
+ */
+const getStyleConfig = (style: StoryStyle, level: CEFRLevel): { instructions: string; temperature: number } => {
+  const isBeginner = level.startsWith("A1") || level === "A2.1";
+  
+  switch (style) {
+    case "Adventure":
+      return {
+        instructions: `GENRE: ADVENTURE. 
+        - Focus on action, travel, and discovery.
+        - ${isBeginner ? "Keep the plot linear. Simple 'Problem -> Journey -> Solution' structure." : "Include suspense, diverse locations, and unexpected obstacles."}`,
+        temperature: 0.6
+      };
+    case "Bedtime":
+      return {
+        instructions: `GENRE: BEDTIME STORY.
+        - Tone: Soothing, calm, repetitive, and gentle.
+        - Structure: Begin with "Once upon a time" (or language equivalent) and end happily.
+        - ${isBeginner ? "Use heavy repetition of key vocabulary for reinforcement." : "Use descriptive, dream-like imagery."}`,
+        temperature: 0.4
+      };
+    case "Biography":
+      return {
+        instructions: `GENRE: BIOGRAPHY.
+        - Format: Factual account of a person's life (real or fictional).
+        - Tone: Respectful, informative, chronological.
+        - ${isBeginner ? "Focus on basic life events: birth, school, job, family." : "Discuss achievements, historical context, and legacy."}`,
+        temperature: 0.3
+      };
+    case "Dialogue":
+      return {
+        instructions: `GENRE: DIALOGUE / SCRIPT.
+        - Format: Use a script format (e.g., 'Person A: [Text]').
+        - Focus: Spoken language, natural conversational fillers appropriate for ${level}.
+        - ${isBeginner ? "Topics: Greetings, ordering food, asking directions." : "Topics: Debates, expressing complex opinions, negotiating."}`,
+        temperature: 0.5
+      };
+    case "Diary":
+      return {
+        instructions: `GENRE: DIARY ENTRY.
+        - Format: Start with a date or 'Dear Diary'. First-person perspective ('I').
+        - Tone: Personal, reflective, informal.
+        - ${isBeginner ? "Describe daily routine, weather, and basic feelings." : "Express deep thoughts, regrets, hopes, and complex emotions."}`,
+        temperature: 0.5
+      };
+    case "Fantasy":
+      return {
+        instructions: `GENRE: FANTASY.
+        - Elements: Magic, mythical creatures, imaginary worlds.
+        - ${isBeginner ? "Keep magic simple (e.g., a flying cat, a magic stone). Avoid complex lore." : "Build a rich world. Use descriptive adjectives for settings."}`,
+        temperature: 0.7
+      };
+    case "Funny":
+      return {
+        instructions: `GENRE: COMEDY / FUNNY.
+        - Goal: Make the reader laugh using situational humor.
+        - ${isBeginner ? "Use physical comedy or simple misunderstandings. NO puns or wordplay (too hard)." : "Use wit, irony, and sarcasm."}`,
+        temperature: 0.8
+      };
+    case "History":
+      return {
+        instructions: `GENRE: HISTORICAL FICTION / HISTORY.
+        - Setting: A specific time in the past.
+        - ${isBeginner ? "Focus on a single event or day. Use simple Past Simple sentences." : "Describe the era, costumes, and social atmosphere."}`,
+        temperature: 0.3
+      };
+    case "Mystery":
+      return {
+        instructions: `GENRE: MYSTERY.
+        - Plot: A puzzle, missing object, or strange event needs solving.
+        - ${isBeginner ? "The solution should be obvious and physical (e.g., the dog hid the keys)." : "Include red herrings and subtle clues."}`,
+        temperature: 0.6
+      };
+    case "News":
+      return {
+        instructions: `GENRE: NEWS ARTICLE.
+        - Format: Headline at the top. Third-person 'Reporter' voice.
+        - Tone: Objective, factual, formal.
+        - ${isBeginner ? "Short sentences. 'Who, What, Where'. Simple reported speech." : "Use passive voice. 'It was reported that...'. Interview quotes."}`,
+        temperature: 0.2
+      };
+    case "Romance":
+      return {
+        instructions: `GENRE: ROMANCE.
+        - Focus: Relationships, feelings, dates.
+        - Tone: Warm, emotional.
+        - ${isBeginner ? "Focus on first meeting, liking someone, going to the movies." : "Focus on deep connection, relationship struggles, and resolution."}`,
+        temperature: 0.6
+      };
+    case "Sci-Fi":
+      return {
+        instructions: `GENRE: SCIENCE FICTION.
+        - Elements: Robots, space, future technology.
+        - ${isBeginner ? "Focus on everyday life with a robot helper. Simple gadgets." : "Explore themes of AI, space travel, or ethical dilemmas."}`,
+        temperature: 0.7
+      };
+    case "Serious":
+      return {
+        instructions: `GENRE: SERIOUS / DRAMA.
+        - Tone: Grounded, realistic, perhaps slightly melancholic or focused on important issues.
+        - ${isBeginner ? "A serious day at work or a lost pet." : "Social issues, personal loss, or difficult decisions."}`,
+        temperature: 0.4
+      };
+    case "Thriller":
+      return {
+        instructions: `GENRE: THRILLER.
+        - Tone: Tense, urgent, fast-paced.
+        - ${isBeginner ? "Someone is late, running for a bus, or hearing a strange noise." : "High stakes, racing against time, psychological tension."}`,
+        temperature: 0.7
+      };
+    default: // Standard
+      return {
+        instructions: "GENRE: STANDARD STORY. A balanced, engaging narrative suitable for general reading practice.",
+        temperature: 0.5
+      };
+  }
+};
+
+/**
+ * Enhanced Level Constraints with FORBIDDEN GRAMMAR to prevent level-bleed.
+ */
 const getLevelConstraints = (level: CEFRLevel): string => {
   switch (level) {
     case "A1.1":
       return `
-        CRITICAL: LEVEL A1.1 (ABSOLUTE BEGINNER) - EXTREMELY RESTRICTIVE
-        1. TENSES: Use ONLY Present Simple (e.g., "It is", "She has"). ABSOLUTELY NO Past, NO Future, NO Continuous tenses.
-        2. VERBS: Use only the top 50 most basic verbs (be, have, do, go, see, eat, drink, sleep, want, like).
-        3. SYNTAX: Subject-Verb-Object (SVO) sentences ONLY. 
-           - Allowed: "The cat is black."
-           - PROHIBITED: "The cat that I saw is black." (No relative clauses).
-           - PROHIBITED: "I want to go." (Avoid complex infinitives if possible, keep it simple).
-        4. CONNECTORS: Use ONLY "and". DO NOT USE "but", "because", "so", "or".
-        5. SENTENCE LENGTH: Max 5-7 words per sentence. Keep them extremely short.
-        6. TOPICS: Concrete, visible objects only (colors, family, house). No abstract concepts.
+        LEVEL: A1.1 (BREAKTHROUGH)
+        - POSITIVE: Top 100 nouns only. Present Simple 'be' and 'have'.
+        - FORBIDDEN: NO 'but', NO 'because', NO Past tenses, NO Future tenses, NO adjectives (except colors/size).
       `;
     case "A1.2":
       return `
-        CRITICAL: LEVEL A1.2 (BEGINNER)
-        1. TENSES: Mostly Present Simple. 
-           - Allowed: Very limited high-frequency Past Simple (only 'was/were', 'did', 'went').
-           - Allowed: 'Can' for ability.
-        2. SYNTAX: Simple sentences. Basic questions (Who, What, Where).
-        3. CONNECTORS: "and", "but", "or". 
-           - PROHIBITED: "because", "if", "when", "so".
-        4. SENTENCE LENGTH: Average 6-8 words.
-        5. VOCABULARY: Top 500 common words.
+        LEVEL: A1.2 (BEGINNER)
+        - POSITIVE: Basic Present Simple. 'and', 'or'.
+        - FORBIDDEN: NO Past Continuous, NO Perfect tenses, NO 'if' clauses, NO 'when' clauses.
       `;
     case "A1.3":
       return `
-        CRITICAL: LEVEL A1.3 (ELEMENTARY)
-        1. TENSES: Present Simple, Present Continuous. 
-           - Allowed: Simple Past (regular/irregular). 
-           - Allowed: 'Going to' for future plans.
-        2. SYNTAX: Compound sentences allowed.
-        3. CONNECTORS: "and", "but", "or", "because".
-        4. VOCABULARY: Top 800 words (Daily routine, family info, hobbies).
+        LEVEL: A1.3 (ELEMENTARY)
+        - POSITIVE: Past Simple (Regular verbs), Present Continuous. 'because'.
+        - FORBIDDEN: NO Passive voice, NO Conditional moods, NO Irregular past forms if obscure.
       `;
     case "A2.1":
       return `
-        CRITICAL: LEVEL A2.1 (HIGH ELEMENTARY)
-        1. TENSES: Past Simple (Narrative). Future with 'will'. Imperatives.
-        2. SYNTAX: Comparatives and Superlatives (bigger, biggest). Adverbs of frequency (always, sometimes).
-        3. CONNECTORS: "when", "then", "first", "next" (Sequencing).
-        4. VOCABULARY: Top 1000 words.
-        5. PROHIBITED: Passive voice, Conditionals.
+        LEVEL: A2.1 (HIGH ELEMENTARY)
+        - POSITIVE: Future 'will', basic Comparatives.
+        - FORBIDDEN: NO Present Perfect, NO Modal verbs like 'should' or 'must'.
       `;
     case "A2.2":
       return `
-        CRITICAL: LEVEL A2.2 (PRE-INTERMEDIATE)
-        1. TENSES: Present Perfect (for Experience, e.g., "Have you ever..."). Modal verbs (must, should, have to).
-        2. SYNTAX: Zero and First Conditional ("If it rains, I stay home"). Relative clauses with "who" or "which".
-        3. VOCABULARY: Top 1500 words.
+        LEVEL: A2.2 (PRE-INTERMEDIATE)
+        - POSITIVE: Present Perfect, Modal verbs, First Conditional.
+        - FORBIDDEN: NO Past Perfect, NO Third Conditional, NO Passive Voice.
       `;
     case "B1.1":
       return `
-        LEVEL B1.1 (INTERMEDIATE)
-        1. TENSES: Past Continuous ("I was walking"). Present Perfect with for/since.
-        2. SYNTAX: Simple Passive voice. Reported speech (basic).
-        3. CONNECTORS: "although", "however", "so that".
-        4. CONTENT: Opinions, reasons, dreams, travel.
+        LEVEL: B1.1 (INTERMEDIATE)
+        - POSITIVE: Simple Passive Voice, Second Conditional.
+        - FORBIDDEN: NO Future Perfect, NO Subjunctive Mood, NO Inversion.
       `;
     case "B1.2":
       return `
-        LEVEL B1.2 (HIGH INTERMEDIATE)
-        1. TENSES: Past Perfect. Used to. 
-        2. SYNTAX: Second Conditional ("If I were rich..."). 
-        3. VOCABULARY: Abstract topics start here.
+        LEVEL: B1.2 (HIGH INTERMEDIATE)
+        - POSITIVE: Past Perfect, Reported Speech, 'although'.
+        - FORBIDDEN: NO Mixed Conditionals, NO complex Gerund vs Infinitive nuances.
       `;
     case "B2.1":
       return `
-        LEVEL B2.1 (UPPER INTERMEDIATE)
-        1. TENSES: Future Continuous. Present Perfect Continuous.
-        2. SYNTAX: Third Conditional. Mixed Conditionals. 
-        3. STYLE: Argumentation, highlighting significance.
-      `;
-    case "B2.2":
-      return `
-        LEVEL B2.2 (PRE-ADVANCED)
-        1. TENSES: All tenses used naturally.
-        2. SYNTAX: Complex passive forms. Inversion for emphasis.
-        3. VOCABULARY: Idioms, phrasal verbs, nuance.
-      `;
-    case "C1-C2":
-      return `
-        LEVEL C1/C2 (ADVANCED/MASTERY)
-        - No grammatical restrictions.
-        - Focus on nuance, idioms, cultural references, and complex literary structures.
-        - High-level vocabulary.
+        LEVEL: B2.1 (UPPER INTERMEDIATE)
+        - POSITIVE: Future Continuous, Mixed Conditionals.
+        - FORBIDDEN: NO Archaic vocabulary, NO overly formal academic structures.
       `;
     default:
-      return "Standard grammar rules.";
+      return "Ensure natural use of the language appropriate for the selected CEFR level.";
   }
 };
 
@@ -152,93 +249,62 @@ export const generateStory = async (
   previousContext?: string
 ): Promise<StoryResponse> => {
   
+  // Create a new instance right before use to ensure latest API_KEY is used.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   const vocabCount = getVocabCount(level);
   const strictLevelConstraints = getLevelConstraints(level);
-
-  // Language specific constraints (keep existing logic)
-  let languageConstraints = "";
-  if (language === "Finnish") {
-    if (level === "A1.1") {
-        languageConstraints += " FINNISH A1.1 SPECIFIC: Use ONLY Nominative (dictionary form) and Partitive (for numbers/negation). Avoid Genitive if possible. NO other cases (No Inessive/Adessive etc. unless absolute set phrases).";
-    } else if (level === "A1.2") {
-        languageConstraints += " FINNISH A1.2 SPECIFIC: Add Genitive. Simple local cases (Missä? -ssa/ssä). Avoid object cases if complex.";
-    } else if (level.startsWith("A2")) {
-      languageConstraints += " CRITICAL FINNISH RULE: Introduce local cases (Inessive, Elative, Illative, Adessive, Ablative, Allative) sparingly. Keep sentence structure SVO where possible.";
-    }
-  }
-
-  let taskDescription = "Task: Write a short story strictly adhering to the requested proficiency level.";
-  let contentContext = "";
-
-  if (previousContext) {
-    taskDescription = "Task: Write the NEXT PART (continuation) of the story provided below. Keep the same characters, setting, and flow. Do NOT repeat the previous text.";
-    contentContext = `
-    PREVIOUS STORY CONTEXT (Do not repeat this, continue from here):
-    "${previousContext.slice(-1500)}"
-    `;
-  }
+  const styleConfig = getStyleConfig(style, level);
 
   const prompt = `
-    Role: You are a strict CEFR compliance engine and language teacher. Your ONE GOAL is to generate text that matches the requested level ${level} EXACTLY.
+    Role: Senior Language Education Specialist & CEFR Auditor.
+    
+    TASK: Generate a ${language} story at EXACTLY level ${level}.
+    ${previousContext ? `CONTEXT: This is a continuation of the previous part: "${previousContext}"` : ""}
 
-    PARAMETERS:
-    - Target Language: ${language}
-    - Level: ${level}
-    - Topic: ${topic}
-    - Style: ${style}
-    - Output/Support Language: ${outputLanguage} (Everything in EnglishTranslation and Vocabulary definitions MUST be in ${outputLanguage})
+    SYSTEMIC WORKFLOW:
+    1. CONFIGURATION: Use the following style settings:
+       ${styleConfig.instructions}
+    2. LENGTH & STRUCTURE (STRICT):
+       - The story MUST be at least 3 distinct paragraphs long.
+       - The total length MUST be approximately 200-300 words (or appropriate length for ${level} to allow for 3 paragraphs).
+       - This is a strict requirement. Do not generate a single block of text. Use \\n\\n to separate paragraphs.
+    3. DRAFTING: Create a story about "${topic}" in ${language}.
+    4. AUDITING (CRITICAL): Scan the draft for grammar or vocabulary that is too complex for ${level}. Even if the style requires creativity, accessibility and level-adherence are the PRIORITY.
+    5. REFINING: Rewrite any sentences that violate the ${level} constraints, even if it makes the style less "pure".
+    6. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty.
     
-    ${contentContext}
-    
-    INSTRUCTIONS FOR STRICT ADHERENCE:
-    1. ANALYZE the "LEVEL CONSTRAINTS" below.
-    2. SIMPLIFY your internal thoughts. If you think of a complex sentence, BREAK IT DOWN.
-    3. VALIDATE every sentence against the allowed tenses and connectors for level ${level}.
-    4. IF LEVEL IS A1.1 or A1.2: Do not try to be "creative" with grammar. Be robotic and simple. Repetition is good.
-    
-    LEVEL CONSTRAINTS (YOU MUST OBEY THESE):
+    CONSTRAINTS FOR ${level}:
     ${strictLevelConstraints}
     
-    LANGUAGE SPECIFIC RULES:
-    ${languageConstraints}
+    VOCABULARY METADATA RULES:
+    - For every highlighted {word|translation}, you MUST categorize its CEFR difficulty in the "vocabularyMetadata" object.
+    - Example: "vocabularyMetadata": { "exploration": { "level": "B2", "reason": "Academic abstract noun" } }
     
-    CONTENT STRUCTURE:
-    - Length: approx 300-400 words.
-    - Paragraphs: 3-5 clear paragraphs separated by \\n\\n.
-    - ENDING: Do NOT finish the story with a definitive ending like "The End". Write the story assuming it can continue to the next page.
-    
-    INTERACTIVE VOCABULARY:
-    - Identify EXACTLY ${vocabCount} key words/phrases.
-    - Embed ${outputLanguage} translations strictly using this format: {inflected_word|translation}
-    - The word inside the curly braces MUST be the actual word used in the sentence (inflected), not the dictionary form.
-    - The translation MUST be in ${outputLanguage}.
-    
-    QUIZ:
-    - Create 3 reading comprehension questions in ${language}.
-    - The quiz must be answerable solely from the text generated above.
-    
-    You will fail if you use vocabulary or grammar from a higher level.
+    FORMAT:
+    - Return JSON matching the schema.
+    - Content must be in ${language}.
+    - englishTranslation must be in ${outputLanguage}.
+    - quiz must be in ${language}.
   `;
 
   try {
-    const response = await genAI.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview", 
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.3, // Low temperature for strict rule following
-        thinkingConfig: { thinkingBudget: 1024 } // Budget for reasoning about grammar constraints
+        temperature: styleConfig.temperature,
+        thinkingConfig: { thinkingBudget: 4000 }
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("No content generated");
-    
-    return JSON.parse(text) as StoryResponse;
-
+    if (!text) throw new Error("Generation failed");
+    return JSON.parse(text.trim()) as StoryResponse;
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Failed to generate story. Please verify your API key and try again.");
+    console.error("API Error:", error);
+    throw new Error("Could not generate story. Please try again.");
   }
 };

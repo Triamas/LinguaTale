@@ -1,3 +1,4 @@
+
 import { AppLanguage } from './types';
 
 export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
@@ -30,7 +31,14 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     errorGenerating: "Error generating story",
     settingsTitle: "App Settings",
     appLanguage: "Application Language",
-    close: "Close"
+    close: "Close",
+    savedStories: "Saved Stories",
+    noSavedStories: "No saved stories yet.",
+    delete: "Delete",
+    load: "Load",
+    continueReading: "Continue Reading",
+    bookmarked: "Bookmarked",
+    bookmarkStory: "Bookmark this story"
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -61,7 +69,14 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     errorGenerating: "Virhe tarinan luonnissa",
     settingsTitle: "Sovelluksen asetukset",
     appLanguage: "Sovelluksen kieli",
-    close: "Sulje"
+    close: "Sulje",
+    savedStories: "Tallennetut tarinat",
+    noSavedStories: "Ei tallennettuja tarinoita.",
+    delete: "Poista",
+    load: "Lataa",
+    continueReading: "Jatka lukemista",
+    bookmarked: "Tallennettu",
+    bookmarkStory: "Tallenna tarina"
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -92,6 +107,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     errorGenerating: "Lỗi khi tạo câu chuyện",
     settingsTitle: "Cài đặt ứng dụng",
     appLanguage: "Ngôn ngữ ứng dụng",
-    close: "Đóng"
+    close: "Đóng",
+    savedStories: "Truyện đã lưu",
+    noSavedStories: "Chưa có truyện nào được lưu.",
+    delete: "Xóa",
+    load: "Mở",
+    continueReading: "Đọc tiếp",
+    bookmarked: "Đã lưu",
+    bookmarkStory: "Lưu câu chuyện này"
   }
 };

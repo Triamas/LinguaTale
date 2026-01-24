@@ -1,8 +1,9 @@
+
 export type Language = 
-  | "Bulgarian" | "Croatian" | "Czech" | "Danish" | "Dutch" | "English" 
+  | "Bulgarian" | "Chinese" | "Croatian" | "Czech" | "Danish" | "Dutch" | "English" 
   | "Estonian" | "Finnish" | "French" | "German" | "Greek" | "Hungarian" 
-  | "Irish" | "Italian" | "Latvian" | "Lithuanian" | "Maltese" | "Polish" 
-  | "Portuguese" | "Romanian" | "Slovak" | "Slovenian" | "Spanish" | "Swedish";
+  | "Irish" | "Italian" | "Japanese" | "Korean" | "Latvian" | "Lithuanian" | "Maltese" | "Polish" 
+  | "Portuguese" | "Romanian" | "Slovak" | "Slovenian" | "Spanish" | "Swedish" | "Vietnamese";
 
 export type AppLanguage = "English" | "Finnish" | "Vietnamese";
 
@@ -14,15 +15,21 @@ export type CEFRLevel =
   | "C1-C2";
 
 export type StoryStyle = 
-  | "Standard"
-  | "Funny"
-  | "Serious"
-  | "Bedtime Story"
-  | "Thriller"
-  | "Sci-Fi"
+  | "Adventure"
+  | "Bedtime"
+  | "Biography"
+  | "Dialogue"
+  | "Diary"
   | "Fantasy"
+  | "Funny"
+  | "History"
   | "Mystery"
-  | "Dialogue-heavy";
+  | "News"
+  | "Romance"
+  | "Sci-Fi"
+  | "Serious"
+  | "Standard"
+  | "Thriller";
 
 export interface QuizQuestion {
   question: string;
@@ -35,6 +42,22 @@ export interface StoryResponse {
   content: string;
   englishTranslation: string;
   quiz: QuizQuestion[];
+  // Metadata for pedagogical verification (not shown to user)
+  vocabularyMetadata: Record<string, {
+    level: string;
+    reason: string;
+  }>;
+}
+
+export interface SavedStory {
+  id: string;
+  createdAt: number;
+  language: Language;
+  level: CEFRLevel;
+  style: StoryStyle;
+  topic: string;
+  history: StoryResponse[];
+  appLanguage: AppLanguage;
 }
 
 export interface GenerationState {

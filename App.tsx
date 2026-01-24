@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon } from 'lucide-react';
-import { LANGUAGES, LEVELS, SUGGESTED_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
-import { Language, CEFRLevel, GenerationState, StoryStyle, StoryResponse, AppLanguage } from './types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library } from 'lucide-react';
+import { LANGUAGES, LEVELS, LEVEL_SPECIFIC_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
+import { Language, CEFRLevel, GenerationState, StoryStyle, StoryResponse, AppLanguage, SavedStory } from './types';
 import { Selector } from './components/Selector';
 import { StoryDisplay } from './components/StoryDisplay';
 import { LoadingState } from './components/LoadingState';
 import { SettingsModal } from './components/SettingsModal';
+import { SavedStoriesModal } from './components/SavedStoriesModal';
 import { generateStory } from './services/geminiService';
 import { TRANSLATIONS } from './translations';
 
@@ -13,26 +14,23 @@ const STORAGE_KEYS = {
   LANGUAGE: 'linguatale_pref_language',
   LEVEL: 'linguatale_pref_level',
   STYLE: 'linguatale_pref_style',
-  APP_LANGUAGE: 'linguatale_app_language'
+  APP_LANGUAGE: 'linguatale_app_language',
+  SAVED_STORIES: 'linguatale_saved_stories'
 };
 
 const App: React.FC = () => {
-  // App Language State
   const [appLanguage, setAppLanguage] = useState<AppLanguage>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.APP_LANGUAGE);
     return (saved && APP_LANGUAGES.includes(saved as AppLanguage)) ? (saved as AppLanguage) : "English";
   });
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // Get current translation dictionaries
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const t = TRANSLATIONS[appLanguage] || TRANSLATIONS["English"];
   const levelDescriptions = LEVEL_DESCRIPTIONS[appLanguage] || LEVEL_DESCRIPTIONS["English"];
-  const suggestedTopics = SUGGESTED_TOPICS[appLanguage] || SUGGESTED_TOPICS["English"];
   const storyStyleLabels = STORY_STYLE_LABELS[appLanguage] || STORY_STYLE_LABELS["English"];
   const languageLabels = LANGUAGE_LABELS[appLanguage] || LANGUAGE_LABELS["English"];
 
-  // Form State - Initialize from LocalStorage or default
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return (saved && LANGUAGES.includes(saved as Language)) ? (saved as Language) : "English";
@@ -50,288 +48,346 @@ const App: React.FC = () => {
 
   const [storyDescription, setStoryDescription] = useState<string>("");
 
-  // Save preferences whenever they change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
-  }, [language]);
+  // History for pagination and state management
+  const [storyHistory, setStoryHistory] = useState<StoryResponse[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LEVEL, level);
-  }, [level]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STYLE, storyStyle);
-  }, [storyStyle]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.APP_LANGUAGE, appLanguage);
-  }, [appLanguage]);
-
-  // Story Pagination State
-  const [storyPages, setStoryPages] = useState<StoryResponse[]>([]);
-  const [pageIndex, setPageIndex] = useState<number>(-1);
-  const [isGeneratingNext, setIsGeneratingNext] = useState(false);
-
-  // API State (for initial generation or general errors)
-  const [generation, setGeneration] = useState<GenerationState>({
-    isLoading: false,
-    error: null,
-    data: null
+  // Persistence for Saved Stories
+  const [savedStories, setSavedStories] = useState<SavedStory[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SAVED_STORIES);
+      if (saved) {
+        let parsed = JSON.parse(saved);
+        // Migration: Rename deprecated styles in saved stories to avoid UI errors
+        parsed = parsed.map((s: any) => ({
+          ...s,
+          style: s.style === "Bedtime Story" ? "Bedtime" : 
+                 s.style === "Dialogue-heavy" ? "Dialogue" : s.style
+        }));
+        return parsed;
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to parse saved stories", e);
+      return [];
+    }
   });
 
-  const handleTagClick = (tag: string) => {
+  // Identifier for the current session's story
+  const [currentStoryId, setCurrentStoryId] = useState<string>(() => crypto.randomUUID());
+
+  // Dynamic Topics based on Level
+  const currentSuggestedTopics = useMemo(() => {
+    // Look up topics for the exact level
+    return LEVEL_SPECIFIC_TOPICS[appLanguage]?.[level] || LEVEL_SPECIFIC_TOPICS["English"]?.["A1.1"] || [];
+  }, [level, appLanguage]);
+
+  // Persist preferences
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.APP_LANGUAGE, appLanguage);
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
+    localStorage.setItem(STORAGE_KEYS.LEVEL, level);
+    localStorage.setItem(STORAGE_KEYS.STYLE, storyStyle);
+  }, [appLanguage, language, level, storyStyle]);
+
+  // Persist Saved Stories
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SAVED_STORIES, JSON.stringify(savedStories));
+  }, [savedStories]);
+
+  // Auto-update saved story if the current story is modified (e.g., new page added)
+  useEffect(() => {
+    if (savedStories.some(s => s.id === currentStoryId) && storyHistory.length > 0) {
+      setSavedStories(prev => prev.map(s => 
+        s.id === currentStoryId ? { ...s, history: storyHistory } : s
+      ));
+    }
+  }, [storyHistory, currentStoryId]);
+
+  const handleGenerateNew = async () => {
+    setIsGenerating(true);
+    setError(null);
+    setStoryHistory([]);
+    setCurrentIndex(-1);
+    
+    // Generate new ID for the new story
+    setCurrentStoryId(crypto.randomUUID());
+    
+    try {
+      const topic = storyDescription.trim() || (currentSuggestedTopics[0] || "A random adventure");
+      const newStory = await generateStory(language, level, topic, storyStyle, appLanguage);
+      setStoryHistory([newStory]);
+      setCurrentIndex(0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      setError(err.message || t.errorGenerating);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleNextPage = async () => {
+    if (currentIndex < storyHistory.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const lastStory = storyHistory[storyHistory.length - 1];
+      const nextPart = await generateStory(
+        language, 
+        level, 
+        `Continuation of: ${lastStory.title}`, 
+        storyStyle, 
+        appLanguage, 
+        lastStory.content
+      );
+      setStoryHistory(prev => [...prev, nextPart]);
+      setCurrentIndex(prev => prev + 1);
+    } catch (err: any) {
+      setError(err.message || t.errorGenerating);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleTopicClick = (topic: string) => {
     setStoryDescription((prev) => {
       const trimmed = prev.trim();
-      if (!trimmed) return tag;
-      return `${trimmed}, ${tag}`;
+      if (!trimmed) return topic;
+      const existing = trimmed.split(',').map(s => s.trim());
+      if (existing.includes(topic)) return trimmed;
+      return `${trimmed}, ${topic}`;
     });
   };
 
-  // Generate the FIRST page of a new story
-  const handleGenerate = async () => {
-    if (!storyDescription.trim()) {
-      alert("Please describe the story or select a topic.");
-      return;
-    }
-
-    setGeneration({ isLoading: true, error: null, data: null });
-    setStoryPages([]);
-    setPageIndex(-1);
-
-    try {
-      const data = await generateStory(language, level, storyDescription, storyStyle, appLanguage);
-      setStoryPages([data]);
-      setPageIndex(0);
-      setGeneration({
-        isLoading: false,
-        error: null,
-        data: null // We use storyPages now
-      });
-    } catch (err: any) {
-      setGeneration({
-        isLoading: false,
-        error: err.message || "An unexpected error occurred.",
-        data: null
-      });
-    }
-  };
-
-  // Navigate to previous page
-  const handlePrevPage = () => {
-    if (pageIndex > 0) {
-      setPageIndex(pageIndex - 1);
-    }
-  };
-
-  // Navigate to next page OR generate it
-  const handleNextPage = async () => {
-    // If we already have the next page in history, just go there
-    if (pageIndex < storyPages.length - 1) {
-      setPageIndex(pageIndex + 1);
-      return;
-    }
-
-    // Otherwise, generate the next chapter
-    setIsGeneratingNext(true);
-    try {
-      // Get content of the current page to use as context
-      const currentContent = storyPages[pageIndex].content;
+  const handleToggleBookmark = () => {
+    if (savedStories.some(s => s.id === currentStoryId)) {
+      // Remove bookmark
+      setSavedStories(prev => prev.filter(s => s.id !== currentStoryId));
+    } else {
+      // Add bookmark
+      if (storyHistory.length === 0) return;
       
-      const newPage = await generateStory(
-        language, 
-        level, 
-        storyDescription, 
-        storyStyle,
-        appLanguage,
-        currentContent // Pass previous context
-      );
-
-      setStoryPages(prev => [...prev, newPage]);
-      setPageIndex(prev => prev + 1);
-    } catch (err: any) {
-      console.error("Failed to generate next page", err);
-      // Optional: Show a toast or alert, but we'll keep the current page visible
-      alert("Failed to generate the next chapter. Please try again.");
-    } finally {
-      setIsGeneratingNext(false);
+      const newSavedStory: SavedStory = {
+        id: currentStoryId,
+        createdAt: Date.now(),
+        language,
+        level,
+        style: storyStyle,
+        topic: storyDescription || currentSuggestedTopics[0],
+        history: storyHistory,
+        appLanguage
+      };
+      setSavedStories(prev => [newSavedStory, ...prev]);
     }
   };
 
-  // Helper to determine what to display
-  const currentStory = pageIndex >= 0 && storyPages.length > pageIndex ? storyPages[pageIndex] : null;
+  const handleLoadStory = (story: SavedStory) => {
+    setLanguage(story.language);
+    setLevel(story.level);
+    setStoryStyle(story.style);
+    setStoryDescription(story.topic);
+    setStoryHistory(story.history);
+    setCurrentStoryId(story.id);
+    setCurrentIndex(story.history.length - 1);
+    setError(null);
+  };
 
-  // Determine theme gradient based on selected target language
+  const handleDeleteSavedStory = (id: string) => {
+    setSavedStories(prev => prev.filter(s => s.id !== id));
+    // If we delete the currently viewed story from the list, we don't necessarily need to clear the view,
+    // but the bookmark icon should update to "unfilled". This happens automatically via reactivity.
+  };
+
+  const currentStory = currentIndex >= 0 ? storyHistory[currentIndex] : null;
   const themeGradient = LANGUAGE_THEMES[language] || "from-indigo-500 to-purple-600";
-  
-  // Get localized label for the current story style
-  const currentStyleLabel = storyStyleLabels[storyStyle];
+  const isBookmarked = savedStories.some(s => s.id === currentStoryId);
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
-      {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        appLanguage={appLanguage}
-        onLanguageChange={setAppLanguage}
-        translations={t}
-      />
-
-      {/* Navbar / Header */}
-      <header className="mx-auto max-w-7xl mb-10 text-center relative">
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className="absolute right-0 top-0 p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-          title={t.settingsTitle}
-        >
-          <SettingsIcon className="w-6 h-6" />
-        </button>
-
-        <div className="flex items-center justify-center space-x-3 mb-2">
-            <div className="p-2 bg-indigo-600 rounded-lg text-white">
-                <BookMarked className="w-8 h-8" />
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="rounded-xl bg-indigo-600 p-2 text-white shadow-lg">
+                <BookMarked className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-gray-900">{t.appTitle}</h1>
+                <p className="hidden text-xs font-medium text-gray-500 sm:block">{t.appSubtitle}</p>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            {t.appTitle}
-            </h1>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsLibraryOpen(true)}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 transition-colors"
+                title={t.savedStories}
+              >
+                <Library className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 transition-colors"
+                title={t.settingsTitle}
+              >
+                <SettingsIcon className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
         </div>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          {t.appSubtitle}
-        </p>
       </header>
 
-      <main className="mx-auto max-w-7xl">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          
-          {/* Left Column: Controls */}
-          <div className="lg:col-span-4">
-            <div className="sticky top-8 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-              <div className={`bg-gradient-to-r ${themeGradient} px-6 py-4 transition-colors duration-500`}>
-                <h2 className="flex items-center text-lg font-semibold text-white shadow-sm">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  {t.storySettings}
+          {/* Sidebar - Controls */}
+          <aside className="lg:col-span-4 xl:col-span-3">
+            <div className="sticky top-24 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+              <div className={`bg-gradient-to-r ${themeGradient} px-6 py-4`}>
+                <h2 className="flex items-center text-lg font-semibold text-white">
+                  <Sparkles className="mr-2 h-5 w-5" /> {t.storySettings}
                 </h2>
               </div>
               
-              <div className="space-y-6 p-6">
-                <Selector<Language> 
+              <div className="p-6 space-y-6">
+                <Selector<Language>
                   label={t.targetLanguage}
-                  value={language} 
-                  options={LANGUAGES} 
+                  value={language}
+                  options={LANGUAGES}
                   onChange={setLanguage}
-                  disabled={generation.isLoading || isGeneratingNext}
                   getLabel={(opt) => languageLabels[opt]}
+                  disabled={isGenerating}
                 />
 
-                <Selector<CEFRLevel> 
+                <Selector<CEFRLevel>
                   label={t.languageLevel}
-                  value={level} 
-                  options={LEVELS} 
+                  value={level}
+                  options={LEVELS}
                   onChange={setLevel}
-                  disabled={generation.isLoading || isGeneratingNext}
                   getLabel={(opt) => levelDescriptions[opt]}
+                  disabled={isGenerating}
                 />
 
-                <Selector<StoryStyle> 
-                  label={t.storyStyle} 
-                  value={storyStyle} 
-                  options={STORY_STYLES} 
+                <Selector<StoryStyle>
+                  label={t.storyStyle}
+                  value={storyStyle}
+                  options={STORY_STYLES}
                   onChange={setStoryStyle}
-                  disabled={generation.isLoading || isGeneratingNext}
                   getLabel={(opt) => storyStyleLabels[opt]}
+                  disabled={isGenerating}
                 />
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-indigo-500" />
                     {t.storyDescription}
                   </label>
                   <textarea
                     value={storyDescription}
                     onChange={(e) => setStoryDescription(e.target.value)}
                     placeholder={t.descPlaceholder}
-                    className="w-full h-32 resize-none rounded-lg border border-gray-300 bg-white text-gray-900 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 placeholder:text-gray-400"
-                    disabled={generation.isLoading || isGeneratingNext}
+                    rows={3}
+                    disabled={isGenerating}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                  
-                  {/* Tag Cloud */}
-                  <div className="pt-2">
-                    <div className="flex items-center gap-1 mb-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        <Tag className="w-3 h-3" />
-                        <span>{t.suggestedTopics}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedTopics.map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => handleTagClick(tag)}
-                          disabled={generation.isLoading || isGeneratingNext}
-                          className="flex-auto text-center px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full border border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          + {tag}
-                        </button>
-                      ))}
-                    </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.suggestedTopics}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {currentSuggestedTopics.map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => handleTopicClick(topic)}
+                        disabled={isGenerating}
+                        className="grow rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 text-center justify-center transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                      >
+                        {topic}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <button
-                    onClick={handleGenerate}
-                    disabled={generation.isLoading || isGeneratingNext || !storyDescription.trim()}
-                    className="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-4 font-bold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
-                  >
-                    {generation.isLoading ? t.startingStory : (
-                        <>
-                            {t.newStory} <Send className="ml-2 h-4 w-4" />
-                        </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  onClick={handleGenerateNew}
+                  disabled={isGenerating}
+                  className="flex w-full items-center justify-center space-x-2 rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  <Send className="h-5 w-5" />
+                  <span>{t.newStory}</span>
+                </button>
               </div>
             </div>
-          </div>
+          </aside>
 
-          {/* Right Column: Display */}
-          <div className="flex flex-col items-center lg:col-span-8">
-            {generation.isLoading && <LoadingState message={t.startingStory} />}
-            
-            {generation.error && (
-              <div className="w-full rounded-xl border border-red-200 bg-red-50 p-4 text-center text-red-700">
-                <p className="font-medium">{t.errorGenerating}</p>
-                <p className="text-sm">{generation.error}</p>
+          {/* Main Content - Story Display */}
+          <section className="lg:col-span-8 xl:col-span-9">
+            {isGenerating && !currentStory ? (
+              <div className="mt-12">
+                <LoadingState message={t.startingStory} />
               </div>
-            )}
-
-            {!generation.isLoading && !generation.error && !currentStory && (
-              <div className="flex h-96 w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 text-center">
-                <div className="mb-4 rounded-full bg-indigo-50 p-4">
-                  <BookMarked className="h-10 w-10 text-indigo-200" />
-                </div>
-                <h3 className="text-xl font-medium text-gray-500">{t.readyToRead}</h3>
-                <p className="mt-1 text-gray-400">{t.readyPrompt}</p>
+            ) : error ? (
+              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200">
+                {error}
               </div>
-            )}
-
-            {currentStory && (
-              <StoryDisplay 
-                story={currentStory} 
-                language={languageLabels[language]} // Pass localized language name
-                styleLabel={currentStyleLabel} // Pass localized style label
+            ) : currentStory ? (
+              <StoryDisplay
+                story={currentStory}
+                language={languageLabels[language]}
+                storyStyle={storyStyle}
+                styleLabel={storyStyleLabels[storyStyle]}
                 level={level}
+                currentPage={currentIndex + 1}
                 onNextPage={handleNextPage}
                 onPrevPage={handlePrevPage}
-                canGoNext={true} // Always allow trying for next page
-                canGoPrev={pageIndex > 0}
-                hasNextPageInHistory={pageIndex < storyPages.length - 1}
-                isGeneratingNext={isGeneratingNext}
-                currentPage={pageIndex + 1}
+                canGoPrev={currentIndex > 0}
+                canGoNext={true}
+                hasNextPageInHistory={currentIndex < storyHistory.length - 1}
+                isGeneratingNext={isGenerating}
                 translations={t}
+                isBookmarked={isBookmarked}
+                onToggleBookmark={handleToggleBookmark}
               />
+            ) : (
+              <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
+                <div className="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600">
+                  <BookMarked className="h-12 w-12" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">{t.readyToRead}</h3>
+                <p className="mt-2 text-gray-500">{t.readyPrompt}</p>
+              </div>
             )}
-          </div>
-
+          </section>
         </div>
       </main>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        appLanguage={appLanguage}
+        onLanguageChange={setAppLanguage}
+        translations={t}
+      />
+      
+      <SavedStoriesModal 
+        isOpen={isLibraryOpen}
+        onClose={() => setIsLibraryOpen(false)}
+        savedStories={savedStories}
+        onLoadStory={handleLoadStory}
+        onDeleteStory={handleDeleteSavedStory}
+        translations={t}
+      />
     </div>
   );
 };
