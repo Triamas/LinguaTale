@@ -40,6 +40,42 @@ interface VocabItem {
   translation: string;
 }
 
+interface UITooltipProps {
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  className?: string;
+}
+
+const UITooltip: React.FC<UITooltipProps> = ({ content, children, position = 'top', className = '' }) => {
+  const positionClasses = {
+    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
+    left: 'right-full top-1/2 -translate-y-1/2 mr-3',
+    right: 'left-full top-1/2 -translate-y-1/2 ml-3',
+  };
+
+  const arrowClasses = {
+    top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-white border-x-transparent border-b-transparent',
+    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-white border-x-transparent border-t-transparent',
+    left: 'left-full top-1/2 -translate-y-1/2 border-l-gray-900 dark:border-l-white border-y-transparent border-r-transparent',
+    right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-white border-y-transparent border-l-transparent',
+  };
+
+  return (
+    <div className={`group/tooltip relative flex items-center justify-center ${className}`}>
+      {children}
+      <div 
+        role="tooltip"
+        className={`pointer-events-none absolute z-50 hidden whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity duration-200 group-hover/tooltip:flex group-hover/tooltip:opacity-100 dark:bg-white dark:text-gray-900 ${positionClasses[position]}`}
+      >
+        {content}
+        <div className={`absolute border-[6px] ${arrowClasses[position]}`}></div>
+      </div>
+    </div>
+  );
+};
+
 /**
  * Robustly parses text into segments and attaches orphan punctuation to the relevant vocab word.
  * This ensures that "word." or "(word)" wraps as a single unit.
@@ -315,38 +351,40 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                 <div className="h-3 w-px bg-white/20" />
                 
                 {/* Level Selector Badge */}
-                <div className="relative group">
-                  <span 
-                    className="flex items-center gap-1 text-xs font-bold text-white cursor-pointer hover:text-indigo-200 transition-colors"
-                    title="Change Level"
-                  >
-                      {level}
-                      <ChevronDown className="h-3 w-3 opacity-80" />
-                  </span>
-                  <select
-                    value={level}
-                    onChange={(e) => onLevelChange(e.target.value as CEFRLevel)}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    aria-label="Change Level"
-                    disabled={isGeneratingNext}
-                  >
-                     {LEVELS.map(l => (
-                       <option key={l} value={l} className="text-gray-900 bg-white dark:bg-gray-800 dark:text-gray-100">
-                         {l}
-                       </option>
-                     ))}
-                  </select>
-                </div>
+                <UITooltip content="Change Proficiency Level" position="bottom">
+                  <div className="relative group cursor-pointer">
+                    <span 
+                      className="flex items-center gap-1 text-xs font-bold text-white hover:text-indigo-200 transition-colors"
+                    >
+                        {level}
+                        <ChevronDown className="h-3 w-3 opacity-80" />
+                    </span>
+                    <select
+                      value={level}
+                      onChange={(e) => onLevelChange(e.target.value as CEFRLevel)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      aria-label="Change Level"
+                      disabled={isGeneratingNext}
+                    >
+                       {LEVELS.map(l => (
+                         <option key={l} value={l} className="text-gray-900 bg-white dark:bg-gray-800 dark:text-gray-100">
+                           {l}
+                         </option>
+                       ))}
+                    </select>
+                  </div>
+                </UITooltip>
              </div>
              
              {/* Focus Toggle */}
-             <button 
-                onClick={onToggleFocus}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none text-white/80 hover:text-white"
-                title={isFocused ? "Exit Focus Mode" : "Enter Focus Mode"}
-             >
-                {isFocused ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-             </button>
+             <UITooltip content={isFocused ? "Exit Focus Mode" : "Enter Focus Mode"} position="bottom">
+               <button 
+                  onClick={onToggleFocus}
+                  className="p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none text-white/80 hover:text-white"
+               >
+                  {isFocused ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+               </button>
+             </UITooltip>
           </div>
         </div>
       </div>
@@ -355,17 +393,18 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         
         {/* Bookmark Button */}
         <div className="absolute top-8 right-6 sm:right-10 z-10">
-          <button 
-            onClick={onToggleBookmark}
-            className={`rounded-full p-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-              isBookmarked 
-                ? "bg-amber-100 text-amber-600 shadow-amber-200 shadow-lg scale-110 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:shadow-none" 
-                : "bg-gray-50 text-gray-400 shadow-sm hover:bg-gray-100 hover:text-gray-600 hover:scale-105 dark:bg-gray-800 dark:text-gray-500 dark:hover:text-gray-300"
-            }`}
-            title={isBookmarked ? translations.bookmarked : translations.bookmarkStory}
-          >
-            <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-current" : ""}`} />
-          </button>
+          <UITooltip content={isBookmarked ? translations.bookmarked : translations.bookmarkStory} position="left">
+            <button 
+              onClick={onToggleBookmark}
+              className={`rounded-full p-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                isBookmarked 
+                  ? "bg-amber-100 text-amber-600 shadow-amber-200 shadow-lg scale-110 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:shadow-none" 
+                  : "bg-gray-50 text-gray-400 shadow-sm hover:bg-gray-100 hover:text-gray-600 hover:scale-105 dark:bg-gray-800 dark:text-gray-500 dark:hover:text-gray-300"
+              }`}
+            >
+              <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-current" : ""}`} />
+            </button>
+          </UITooltip>
         </div>
 
         {/* Story Section */}
@@ -400,6 +439,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                         <span
                           role="button"
                           tabIndex={0}
+                          aria-expanded={isOpen}
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveTooltipId(isOpen ? null : uniqueId);
@@ -425,6 +465,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                         
                         {/* Tooltip */}
                         <div 
+                           id={`tooltip-${uniqueId}`}
                            className={`absolute bottom-full left-1/2 mb-3 z-50 -translate-x-1/2 transition-all duration-200 ease-out origin-bottom ${
                              isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
                            }`}
@@ -464,47 +505,53 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
         {/* Pagination Controls */}
         <div className="flex items-center justify-between pt-8 font-sans">
-            <button
-                onClick={onPrevPage}
-                disabled={!canGoPrev || isGeneratingNext}
-                className="group flex items-center space-x-2 rounded-2xl border-0 bg-gray-100 px-6 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                <span>{translations.previousPage}</span>
-            </button>
+            <UITooltip content={translations.previousPage} position="top">
+              <button
+                  onClick={onPrevPage}
+                  disabled={!canGoPrev || isGeneratingNext}
+                  className="group flex items-center space-x-2 rounded-2xl border-0 bg-gray-100 px-6 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                  <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                  <span>{translations.previousPage}</span>
+              </button>
+            </UITooltip>
             
-            <button
-                onClick={onNextPage}
-                disabled={!canGoNext || isGeneratingNext}
-                className={`group flex items-center space-x-2 rounded-2xl px-8 py-3.5 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100
-                    ${!hasNextPageInHistory 
-                        ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/30 shadow-indigo-500/20 dark:bg-indigo-500 dark:hover:bg-indigo-600" 
-                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-indigo-600 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
-                    }
-                `}
-            >
-                {isGeneratingNext ? (
-                     <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{translations.creatingNextPage}</span>
-                     </>
-                ) : (
-                    <>
-                        <span>{translations.nextPage}</span>
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </>
-                )}
-            </button>
+            <UITooltip content={translations.nextPage} position="top">
+              <button
+                  onClick={onNextPage}
+                  disabled={!canGoNext || isGeneratingNext}
+                  className={`group flex items-center space-x-2 rounded-2xl px-8 py-3.5 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100
+                      ${!hasNextPageInHistory 
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/30 shadow-indigo-500/20 dark:bg-indigo-500 dark:hover:bg-indigo-600" 
+                          : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-indigo-600 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
+                      }
+                  `}
+              >
+                  {isGeneratingNext ? (
+                      <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>{translations.creatingNextPage}</span>
+                      </>
+                  ) : (
+                      <>
+                          <span>{translations.nextPage}</span>
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                  )}
+              </button>
+            </UITooltip>
         </div>
 
         <div className="flex justify-center pt-4 font-sans">
-            <button 
-                onClick={() => setShowTranslation(!showTranslation)}
-                className="flex items-center space-x-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none transition-colors rounded-full py-2 px-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-            >
-                <Languages className="h-4 w-4" />
-                <span>{showTranslation ? translations.hideTranslation : translations.showTranslation}</span>
-            </button>
+            <UITooltip content={showTranslation ? "Hide English Translation" : "Show English Translation"} position="top">
+              <button 
+                  onClick={() => setShowTranslation(!showTranslation)}
+                  className="flex items-center space-x-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none transition-colors rounded-full py-2 px-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+              >
+                  <Languages className="h-4 w-4" />
+                  <span>{showTranslation ? translations.hideTranslation : translations.showTranslation}</span>
+              </button>
+            </UITooltip>
         </div>
 
         {showTranslation && (
@@ -644,11 +691,14 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                                     return (
                                         <div 
                                             key={index}
-                                            onClick={() => toggleCardFlip(index)}
                                             className="group perspective-1000 cursor-pointer h-48"
-                                            title={translations.clickToFlip}
                                         >
-                                            <div className={`relative h-full w-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                                            <button 
+                                                onClick={() => toggleCardFlip(index)}
+                                                className={`relative h-full w-full transition-all duration-500 transform-style-3d text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl ${isFlipped ? 'rotate-y-180' : ''}`}
+                                                title={translations.clickToFlip}
+                                                aria-label={`${item.word}, ${translations.clickToFlip}`}
+                                            >
                                                 
                                                 {/* Front */}
                                                 <div className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02] group-hover:border-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:group-hover:border-indigo-500/30">
@@ -663,7 +713,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                                                         <CheckCircle2 className="h-5 w-5" />
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </button>
                                         </div>
                                     );
                                 })}

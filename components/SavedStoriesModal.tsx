@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { X, BookMarked, Trash2, BookOpen } from 'lucide-react';
 import { SavedStory } from '../types';
 
@@ -19,19 +19,27 @@ export const SavedStoriesModal: React.FC<SavedStoriesModalProps> = ({
   onDeleteStory,
   translations
 }) => {
+  const titleId = useId();
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-gray-800">
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-800">
           <div className="flex items-center space-x-2 text-gray-900 dark:text-white">
             <BookMarked className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-lg font-bold">{translations.savedStories}</h3>
+            <h3 id={titleId} className="text-lg font-bold">{translations.savedStories}</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            aria-label={translations.close}
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
             <X className="h-5 w-5" />
           </button>
@@ -77,8 +85,9 @@ export const SavedStoriesModal: React.FC<SavedStoriesModalProps> = ({
                     </button>
                     <button
                       onClick={() => onDeleteStory(story.id)}
-                      className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 focus:outline-none dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                      className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
                       title={translations.delete}
+                      aria-label={`${translations.delete} ${story.history[0]?.title}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

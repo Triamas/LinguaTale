@@ -93,10 +93,14 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ finish, onFinished }
   const currentText = LOADING_STAGES[currentStageIndex]?.text || "Finalizing...";
 
   return (
-    <div className="w-full max-w-3xl mx-auto overflow-hidden rounded-3xl bg-white shadow-2xl shadow-indigo-100 ring-1 ring-gray-900/5 dark:bg-[#111827] dark:ring-gray-800 dark:shadow-none animate-fade-in relative">
+    <div 
+      role="status" 
+      aria-live="polite"
+      className="w-full max-w-3xl mx-auto overflow-hidden rounded-3xl bg-white shadow-2xl shadow-indigo-100 ring-1 ring-gray-900/5 dark:bg-[#111827] dark:ring-gray-800 dark:shadow-none animate-fade-in relative"
+    >
       
       {/* Skeleton Header */}
-      <div className="border-b border-gray-100 bg-gray-50/50 px-8 py-6 dark:border-gray-800 dark:bg-gray-800/50">
+      <div className="border-b border-gray-100 bg-gray-50/50 px-8 py-6 dark:border-gray-800 dark:bg-gray-800/50" aria-hidden="true">
         <div className="flex items-center justify-between">
           <div className="h-6 w-32 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
           <div className="flex gap-2">
@@ -108,12 +112,12 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ finish, onFinished }
 
       <div className="px-8 py-10 sm:px-12 space-y-10">
         {/* Title Skeleton */}
-        <div className="flex justify-center">
+        <div className="flex justify-center" aria-hidden="true">
           <div className="h-10 w-3/4 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
         </div>
 
         {/* Paragraph Skeletons */}
-        <div className="space-y-8">
+        <div className="space-y-8" aria-hidden="true">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-4">
               <div className="h-4 w-full rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
@@ -137,7 +141,13 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ finish, onFinished }
              </span>
           </div>
 
-          <div className="w-full bg-gray-100 rounded-full h-2 dark:bg-gray-800 overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+          <div 
+            className="w-full bg-gray-100 rounded-full h-2 dark:bg-gray-800 overflow-hidden ring-1 ring-black/5 dark:ring-white/5"
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
             <div 
               className="bg-indigo-600 h-full rounded-full transition-all duration-200 ease-out shadow-[0_0_15px_rgba(79,70,229,0.6)]" 
               style={{ width: `${progress}%` }} 

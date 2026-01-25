@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface SelectorProps<T extends string> {
@@ -20,14 +20,20 @@ export const Selector = <T extends string>({
   getLabel,
   icon
 }: SelectorProps<T>) => {
+  const selectId = useId();
+
   return (
     <div className="flex flex-col space-y-2.5">
-      <label className="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+      <label 
+        htmlFor={selectId} 
+        className="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2"
+      >
         {icon}
         {label}
       </label>
       <div className="relative group">
         <select
+          id={selectId}
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
           disabled={disabled}

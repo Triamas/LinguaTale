@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { X, Settings } from 'lucide-react';
 import { AppLanguage, Theme } from '../types';
 import { APP_LANGUAGES } from '../constants';
@@ -18,11 +18,12 @@ interface SettingsModalProps {
   translations: Record<string, string>;
 }
 
-const ToggleSwitch: React.FC<{ checked: boolean; onChange: (val: boolean) => void }> = ({ checked, onChange }) => (
+const ToggleSwitch: React.FC<{ checked: boolean; onChange: (val: boolean) => void; labelId: string }> = ({ checked, onChange, labelId }) => (
   <button
     type="button"
     role="switch"
     aria-checked={checked}
+    aria-labelledby={labelId}
     onClick={() => onChange(!checked)}
     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
       checked ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
@@ -49,19 +50,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onShowFlashCardsChange,
   translations
 }) => {
+  const darkModeId = useId();
+  const quizId = useId();
+  const flashCardsId = useId();
+  const titleId = useId();
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-gray-800">
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-800">
           <div className="flex items-center space-x-2 text-gray-900 dark:text-white">
             <Settings className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-lg font-bold">{translations.settingsTitle}</h3>
+            <h3 id={titleId} className="text-lg font-bold">{translations.settingsTitle}</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            aria-label={translations.close}
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
             <X className="h-5 w-5" />
           </button>
@@ -78,34 +90,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="space-y-6 pt-2">
              {/* Dark Mode Toggle */}
              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <label id={darkModeId} className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {translations.darkMode}
                 </label>
                 <ToggleSwitch 
                   checked={theme === 'dark'}
                   onChange={(checked) => onThemeChange(checked ? 'dark' : 'light')}
+                  labelId={darkModeId}
                 />
              </div>
 
              {/* Quiz Toggle */}
              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <label id={quizId} className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {translations.enableQuiz}
                 </label>
                 <ToggleSwitch 
                   checked={showQuiz}
                   onChange={onShowQuizChange}
+                  labelId={quizId}
                 />
              </div>
 
              {/* Flash Cards Toggle */}
              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <label id={flashCardsId} className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {translations.enableFlashCards}
                 </label>
                 <ToggleSwitch 
                   checked={showFlashCards}
                   onChange={onShowFlashCardsChange}
+                  labelId={flashCardsId}
                 />
              </div>
           </div>
