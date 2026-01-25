@@ -2,8 +2,9 @@
 export type Language = 
   | "Bulgarian" | "Chinese" | "Croatian" | "Czech" | "Danish" | "Dutch" | "English" 
   | "Estonian" | "Finnish" | "French" | "German" | "Greek" | "Hungarian" 
-  | "Irish" | "Italian" | "Japanese" | "Korean" | "Latvian" | "Lithuanian" | "Maltese" | "Polish" 
-  | "Portuguese" | "Romanian" | "Slovak" | "Slovenian" | "Spanish" | "Swedish" | "Vietnamese";
+  | "Irish" | "Italian" | "Japanese" | "Korean" | "Latvian" | "Lithuanian" 
+  | "Maltese" | "Polish" | "Portuguese" | "Romanian" | "Slovak" | "Slovenian" 
+  | "Spanish" | "Swedish" | "Vietnamese";
 
 export type AppLanguage = "English" | "Finnish" | "Vietnamese";
 
