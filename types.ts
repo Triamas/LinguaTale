@@ -65,6 +65,14 @@ export interface SavedStory {
   appLanguage: AppLanguage;
 }
 
+export interface SavedFlashCard {
+  id: string; // Composite key: word + language
+  word: string;
+  translation: string;
+  language: string; // The target language (e.g., "Finnish")
+  createdAt: number;
+}
+
 export interface GenerationState {
   isLoading: boolean;
   error: string | null;

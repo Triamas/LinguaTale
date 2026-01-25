@@ -14,6 +14,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     suggestedTopics: "Suggested Topics",
     newStory: "New Story",
     startingStory: "Starting Story...",
+    rewritingStory: "Adapting story to new level...",
     previousPage: "Previous Page",
     nextPage: "Next Page",
     creatingNextPage: "Creating Next Page...",
@@ -48,7 +49,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     enableFlashCards: "Enable Flash Cards",
     noVocabFound: "No highlighted vocabulary found in this story.",
     clickToFlip: "Click to reveal translation",
-    grammarPoint: "Grammar Note"
+    grammarPoint: "Grammar Note",
+    savedFlashCards: "Saved Flash Cards",
+    noSavedFlashCards: "No saved flash cards yet. Flip cards in stories to save them.",
+    removeFlashCard: "Remove card"
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -62,6 +66,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     suggestedTopics: "Ehdotettuja aiheita",
     newStory: "Uusi tarina",
     startingStory: "Aloitetaan tarinaa...",
+    rewritingStory: "Mukautetaan tarinaa uudelle tasolle...",
     previousPage: "Edellinen sivu",
     nextPage: "Seuraava sivu",
     creatingNextPage: "Luodaan seuraavaa sivua...",
@@ -96,7 +101,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     enableFlashCards: "Näytä sanastokortit",
     noVocabFound: "Tästä tarinasta ei löytynyt korostettua sanastoa.",
     clickToFlip: "Klikkaa nähdäksesi käännös",
-    grammarPoint: "Kielioppihuomio"
+    grammarPoint: "Kielioppihuomio",
+    savedFlashCards: "Tallennetut kortit",
+    noSavedFlashCards: "Ei tallennettuja kortteja. Käännä kortteja tarinoissa tallentaaksesi ne.",
+    removeFlashCard: "Poista kortti"
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -110,6 +118,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     suggestedTopics: "Chủ đề gợi ý",
     newStory: "Câu chuyện mới",
     startingStory: "Đang tạo câu chuyện...",
+    rewritingStory: "Đang điều chỉnh câu chuyện theo cấp độ mới...",
     previousPage: "Trang trước",
     nextPage: "Trang sau",
     creatingNextPage: "Đang tạo trang tiếp theo...",
@@ -144,6 +153,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     enableFlashCards: "Bật thẻ ghi nhớ",
     noVocabFound: "Không tìm thấy từ vựng nổi bật trong truyện này.",
     clickToFlip: "Nhấn để xem nghĩa",
-    grammarPoint: "Điểm ngữ pháp"
+    grammarPoint: "Điểm ngữ pháp",
+    savedFlashCards: "Thẻ đã lưu",
+    noSavedFlashCards: "Chưa có thẻ nào. Lật thẻ trong truyện để lưu.",
+    removeFlashCard: "Xóa thẻ"
   }
 };

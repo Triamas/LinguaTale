@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library, Globe, BarChart2, Feather } from 'lucide-react';
+import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library, Globe, BarChart2, Feather, SquareStack } from 'lucide-react';
 import { LANGUAGES, LEVELS, LEVEL_SPECIFIC_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
-import { Language, CEFRLevel, GenerationState, StoryStyle, StoryResponse, AppLanguage, SavedStory, Theme } from './types';
+import { Language, CEFRLevel, GenerationState, StoryStyle, StoryResponse, AppLanguage, SavedStory, Theme, SavedFlashCard } from './types';
 import { Selector } from './components/Selector';
 import { StoryDisplay } from './components/StoryDisplay';
 import { LoadingState } from './components/LoadingState';
 import { SettingsModal } from './components/SettingsModal';
 import { SavedStoriesModal } from './components/SavedStoriesModal';
+import { SavedFlashCardsModal } from './components/SavedFlashCardsModal';
 import { generateStory } from './services/geminiService';
 import { TRANSLATIONS } from './translations';
 
@@ -16,6 +18,7 @@ const STORAGE_KEYS = {
   STYLE: 'linguatale_pref_style',
   APP_LANGUAGE: 'linguatale_app_language',
   SAVED_STORIES: 'linguatale_saved_stories',
+  SAVED_FLASHCARDS: 'linguatale_saved_flashcards',
   THEME: 'linguatale_theme',
   SHOW_QUIZ: 'linguatale_show_quiz',
   SHOW_FLASHCARDS: 'linguatale_show_flashcards'
@@ -45,6 +48,7 @@ const App: React.FC = () => {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isFlashCardsOpen, setIsFlashCardsOpen] = useState(false);
   
   // Immersive Focus Mode State
   const [isFocused, setIsFocused] = useState(false);
@@ -73,7 +77,13 @@ const App: React.FC = () => {
 
   const [storyHistory, setStoryHistory] = useState<StoryResponse[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [isFinishingLoading, setIsFinishingLoading] = useState(false);
+  // Holds the function to execute once the loading bar hits 100%
+  const [pendingUpdate, setPendingUpdate] = useState<(() => void) | null>(null);
+
   const [error, setError] = useState<string | null>(null);
 
   const [savedStories, setSavedStories] = useState<SavedStory[]>(() => {
@@ -91,6 +101,16 @@ const App: React.FC = () => {
       return [];
     } catch (e) {
       console.error("Failed to parse saved stories", e);
+      return [];
+    }
+  });
+
+  const [savedFlashCards, setSavedFlashCards] = useState<SavedFlashCard[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SAVED_FLASHCARDS);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to parse saved flashcards", e);
       return [];
     }
   });
@@ -125,6 +145,10 @@ const App: React.FC = () => {
   }, [savedStories]);
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SAVED_FLASHCARDS, JSON.stringify(savedFlashCards));
+  }, [savedFlashCards]);
+
+  useEffect(() => {
     if (savedStories.some(s => s.id === currentStoryId) && storyHistory.length > 0) {
       setSavedStories(prev => prev.map(s => 
         s.id === currentStoryId ? { ...s, history: storyHistory } : s
@@ -132,9 +156,21 @@ const App: React.FC = () => {
     }
   }, [storyHistory, currentStoryId]);
 
+  const handleLoadingComplete = () => {
+    if (pendingUpdate) {
+      pendingUpdate();
+    }
+    setPendingUpdate(null);
+    setIsFinishingLoading(false);
+    setIsGenerating(false);
+    setIsRewriting(false);
+  };
+
   const handleGenerateNew = async () => {
     setIsGenerating(true);
-    setIsFocused(false); // Reset focus when starting fresh
+    setIsRewriting(false);
+    setIsFinishingLoading(false);
+    setIsFocused(false);
     setError(null);
     setStoryHistory([]);
     setCurrentIndex(-1);
@@ -152,12 +188,19 @@ const App: React.FC = () => {
         showQuiz,
         showFlashCards
       );
-      setStoryHistory([newStory]);
-      setCurrentIndex(0);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Store the update action for later
+      setPendingUpdate(() => () => {
+        setStoryHistory([newStory]);
+        setCurrentIndex(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      
+      // Signal loading bar to finish
+      setIsFinishingLoading(true);
+      
     } catch (err: any) {
       setError(err.message || t.errorGenerating);
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -188,6 +231,48 @@ const App: React.FC = () => {
       setError(err.message || t.errorGenerating);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleLevelChange = async (newLevel: CEFRLevel) => {
+    if (isGenerating || currentIndex < 0 || !storyHistory[currentIndex]) return;
+    
+    setLevel(newLevel);
+    setIsGenerating(true);
+    setIsRewriting(true);
+    setIsFinishingLoading(false);
+    setError(null);
+    
+    try {
+      const currentStoryContent = storyHistory[currentIndex].content;
+      const rewrittenStory = await generateStory(
+        language,
+        newLevel,
+        storyDescription || "Rewritten Story", 
+        storyStyle,
+        appLanguage,
+        showQuiz,
+        showFlashCards,
+        undefined, 
+        currentStoryContent 
+      );
+
+      // Store update action
+      setPendingUpdate(() => () => {
+        setStoryHistory(prev => {
+          const newHistory = [...prev];
+          newHistory[currentIndex] = rewrittenStory;
+          return newHistory;
+        });
+      });
+      
+      // Signal loading bar to finish
+      setIsFinishingLoading(true);
+      
+    } catch (err: any) {
+      setError(err.message || t.errorGenerating);
+      setIsGenerating(false);
+      setIsRewriting(false);
     }
   };
 
@@ -227,6 +312,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleFlashCardToggle = (word: string, translation: string, isSaved: boolean) => {
+    const id = `${language}-${word}`; 
+    
+    if (isSaved) {
+      setSavedFlashCards(prev => {
+        if (prev.some(fc => fc.id === id)) return prev;
+        return [{
+          id,
+          word,
+          translation,
+          language,
+          createdAt: Date.now()
+        }, ...prev];
+      });
+    } else {
+      setSavedFlashCards(prev => prev.filter(fc => fc.id !== id));
+    }
+  };
+
+  const handleDeleteSavedFlashCard = (id: string) => {
+    setSavedFlashCards(prev => prev.filter(fc => fc.id !== id));
+  };
+
   const handleLoadStory = (story: SavedStory) => {
     setLanguage(story.language);
     setLevel(story.level);
@@ -249,11 +357,10 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
       
-      {/* App Header - Enhanced Glassmorphism */}
+      {/* App Header */}
       <header className={`sticky top-0 z-40 w-full bg-white/70 backdrop-blur-lg border-b border-gray-200/50 dark:bg-gray-900/70 dark:border-gray-800/50 transition-all duration-500 ease-in-out ${isFocused ? 'lg:-translate-y-full opacity-0 lg:opacity-0' : 'translate-y-0 opacity-100'}`}>
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Logo Area */}
             <div className="group flex items-center space-x-3 cursor-default">
               <div className="relative rounded-xl bg-indigo-600 p-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:shadow-indigo-500/30">
                 <BookMarked className="h-6 w-6" />
@@ -269,8 +376,15 @@ const App: React.FC = () => {
               </div>
             </div>
             
-            {/* Action Buttons */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsFlashCardsOpen(true)}
+                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                title={t.savedFlashCards}
+              >
+                <SquareStack className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+              </button>
+
               <button
                 onClick={() => setIsLibraryOpen(true)}
                 className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
@@ -379,9 +493,13 @@ const App: React.FC = () => {
 
           {/* Main Content - Story Display */}
           <section className={`transition-all duration-500 ${isFocused ? 'lg:col-span-12' : 'lg:col-span-8 xl:col-span-9'}`}>
-            {isGenerating && !currentStory ? (
+            {(isGenerating && (!currentStory || isRewriting)) ? (
               <div className="mt-12">
-                <LoadingState message={t.startingStory} />
+                <LoadingState 
+                  message={isRewriting ? t.rewritingStory : t.startingStory} 
+                  finish={isFinishingLoading}
+                  onFinished={handleLoadingComplete}
+                />
               </div>
             ) : error ? (
               <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/20 dark:text-red-300 dark:ring-red-900/50">
@@ -408,6 +526,8 @@ const App: React.FC = () => {
                 onToggleFocus={() => setIsFocused(!isFocused)}
                 showQuiz={showQuiz}
                 showFlashCards={showFlashCards}
+                onFlashCardToggle={handleFlashCardToggle}
+                onLevelChange={handleLevelChange}
               />
             ) : (
               <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white p-12 text-center dark:bg-gray-900 dark:border-gray-800">
@@ -442,6 +562,14 @@ const App: React.FC = () => {
         savedStories={savedStories}
         onLoadStory={handleLoadStory}
         onDeleteStory={handleDeleteSavedStory}
+        translations={t}
+      />
+
+      <SavedFlashCardsModal
+        isOpen={isFlashCardsOpen}
+        onClose={() => setIsFlashCardsOpen(false)}
+        savedFlashCards={savedFlashCards}
+        onDeleteFlashCard={handleDeleteSavedFlashCard}
         translations={t}
       />
     </div>

@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap } from 'lucide-react';
-import { StoryResponse, StoryStyle } from '../types';
+import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap, ChevronDown } from 'lucide-react';
+import { StoryResponse, StoryStyle, CEFRLevel } from '../types';
+import { LEVELS } from '../constants';
 
 interface StoryDisplayProps {
   story: StoryResponse;
@@ -23,6 +24,8 @@ interface StoryDisplayProps {
   onToggleFocus: () => void;
   showQuiz: boolean;
   showFlashCards: boolean;
+  onFlashCardToggle: (word: string, translation: string, isSaved: boolean) => void;
+  onLevelChange: (level: CEFRLevel) => void;
 }
 
 interface TextSegment {
@@ -205,7 +208,9 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   isFocused,
   onToggleFocus,
   showQuiz,
-  showFlashCards
+  showFlashCards,
+  onFlashCardToggle,
+  onLevelChange
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
@@ -270,10 +275,16 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   const toggleCardFlip = (index: number) => {
     setFlippedCards(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(index)) {
+      const isCurrentlyFlipped = newSet.has(index);
+      
+      if (isCurrentlyFlipped) {
         newSet.delete(index);
+        // If removing flip, we call toggle with false (remove from saved)
+        onFlashCardToggle(vocabList[index].word, vocabList[index].translation, false);
       } else {
         newSet.add(index);
+        // If adding flip, we call toggle with true (add to saved)
+        onFlashCardToggle(vocabList[index].word, vocabList[index].translation, true);
       }
       return newSet;
     });
@@ -294,9 +305,30 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2">
                 <span className="opacity-75 text-xs font-bold uppercase tracking-wider not-italic">{translations.page} {currentPage}</span>
-                <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold text-white not-italic ring-1 ring-white/30">
-                    {level}
-                </span>
+                
+                {/* Level Selector Badge */}
+                <div className="relative group">
+                  <span 
+                    className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold text-white not-italic ring-1 ring-white/30 cursor-pointer hover:bg-white/30 transition-colors"
+                    title="Change Level"
+                  >
+                      {level}
+                      <ChevronDown className="h-3 w-3 opacity-80" />
+                  </span>
+                  <select
+                    value={level}
+                    onChange={(e) => onLevelChange(e.target.value as CEFRLevel)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    aria-label="Change Level"
+                    disabled={isGeneratingNext}
+                  >
+                     {LEVELS.map(l => (
+                       <option key={l} value={l} className="text-gray-900 bg-white dark:bg-gray-800 dark:text-gray-100">
+                         {l}
+                       </option>
+                     ))}
+                  </select>
+                </div>
              </div>
              
              {/* Divider */}
@@ -375,10 +407,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                             }
                           }}
                           className={`
-                            cursor-pointer rounded border-b-[3px] font-bold transition-all outline-none px-0.5 not-italic
+                            cursor-pointer rounded-[2px] transition-all outline-none px-[1px] not-italic
                             ${isOpen 
-                              ? 'border-indigo-600 bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100' 
-                              : 'border-indigo-300/70 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/40'
+                              ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 font-medium shadow-sm' 
+                              : 'border-b-[1.5px] border-dotted border-gray-400/70 hover:border-gray-600 dark:border-gray-500/70 dark:hover:border-gray-400 hover:bg-black/5 dark:hover:bg-white/5'
                             }
                           `}
                         >

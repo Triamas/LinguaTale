@@ -196,7 +196,8 @@ export const generateStory = async (
   outputLanguage: AppLanguage,
   enableQuiz: boolean,
   enableFlashCards: boolean,
-  previousContext?: string
+  previousContext?: string,
+  contentToRewrite?: string
 ): Promise<StoryResponse> => {
   
   // Create a new instance right before use to ensure latest API_KEY is used.
@@ -281,11 +282,20 @@ export const generateStory = async (
     required: requiredFields
   };
 
+  // Determine the task prompt: Create new OR Rewrite existing
+  const taskInstructions = contentToRewrite 
+    ? `TASK: REWRITE the provided story content to be EXACTLY level ${level}.
+       - Maintain the original plot, characters, and meaning.
+       - Adjust vocabulary and grammar to match ${level}.
+       - ORIGINAL CONTENT: "${contentToRewrite}"`
+    : `TASK: Generate a ${language} story at EXACTLY level ${level}.
+       ${previousContext ? `CONTEXT: This is a continuation of the previous part: "${previousContext}"` : ""}
+       DRAFTING: Create a story about "${topic}" in ${language}.`;
+
   const prompt = `
     Role: Senior Language Education Specialist & CEFR Auditor.
     
-    TASK: Generate a ${language} story at EXACTLY level ${level}.
-    ${previousContext ? `CONTEXT: This is a continuation of the previous part: "${previousContext}"` : ""}
+    ${taskInstructions}
 
     SYSTEMIC WORKFLOW:
     1. CONFIGURATION: Use the following style settings:
@@ -294,14 +304,13 @@ export const generateStory = async (
        - The story MUST be at least 3 distinct paragraphs long.
        - The total length MUST be approximately 200-300 words (or appropriate length for ${level} to allow for 3 paragraphs).
        - This is a strict requirement. Do not generate a single block of text. Use \\n\\n to separate paragraphs.
-    3. DRAFTING: Create a story about "${topic}" in ${language}.
-    4. AUDITING (CRITICAL): Scan the draft for grammar or vocabulary that is too complex for ${level}. Even if the style requires creativity, accessibility and level-adherence are the PRIORITY.
-    5. REFINING: Rewrite any sentences that violate the ${level} constraints, even if it makes the style less "pure".
-    6. PEDAGOGICAL METADATA:
+    3. AUDITING (CRITICAL): Scan the draft for grammar or vocabulary that is too complex for ${level}. Even if the style requires creativity, accessibility and level-adherence are the PRIORITY.
+    4. REFINING: Rewrite any sentences that violate the ${level} constraints, even if it makes the style less "pure".
+    5. PEDAGOGICAL METADATA:
        - Create a "shortDescription" in ${outputLanguage} that summarizes the story in 1 sentence to prime the learner.
        - Identify one key "grammarPoint" used in the story (e.g., "Use of Past Simple") and explain it simply in ${outputLanguage}.
        ${enableQuiz ? `- Create quiz explanations in ${outputLanguage}.` : ""}
-    ${enableFlashCards ? `7. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty. Use {word|translation} format in the content.` : "7. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
+    ${enableFlashCards ? `6. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty. Use {word|translation} format in the content.` : "6. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
     
     CONSTRAINTS FOR ${level}:
     ${strictLevelConstraints}
