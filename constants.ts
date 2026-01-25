@@ -108,10 +108,10 @@ export const LEVEL_DESCRIPTIONS: Record<AppLanguage, Record<CEFRLevel, string>> 
     "A2.1": "A2.1 - Sơ trung cấp",
     "A2.2": "A2.2 - Tiền trung cấp",
     "B1.1": "B1.1 - Trung cấp",
-    "B1.2": "B1.2 - Trung cao cấp",
-    "B2.1": "B2.1 - Cao cấp",
-    "B2.2": "B2.2 - Tiền thành thạo",
-    "C1-C2": "C1-C2 - Thành thạo"
+    "B1.2": "B1.2 - Trung cấp nâng cao",
+    "B2.1": "B2.1 - Trên trung cấp",
+    "B2.2": "B2.2 - Tiền cao cấp",
+    "C1-C2": "C1-C2 - Cao cấp / Thành thạo"
   }
 };
 
@@ -177,11 +177,11 @@ export const STORY_STYLE_LABELS: Record<AppLanguage, Record<StoryStyle, string>>
     "Fantasy": "Giả tưởng", 
     "Funny": "Hài hước", 
     "History": "Lịch sử",
-    "Mystery": "Bí ẩn", 
+    "Mystery": "Trinh thám", 
     "News": "Tin tức",
     "Romance": "Lãng mạn",
     "Sci-Fi": "Khoa học viễn tưởng", 
-    "Serious": "Nghiêm túc", 
+    "Serious": "Chính kịch", 
     "Standard": "Tiêu chuẩn", 
     "Thriller": "Giật gân" 
   }
