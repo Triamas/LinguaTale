@@ -1,0 +1,11 @@
+name: Build Electron (Deprecated)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  removed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: echo "Electron support has been removed."
