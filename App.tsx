@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library } from 'lucide-react';
+import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library, Globe, BarChart2, Feather } from 'lucide-react';
 import { LANGUAGES, LEVELS, LEVEL_SPECIFIC_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
 import { Language, CEFRLevel, GenerationState, StoryStyle, StoryResponse, AppLanguage, SavedStory, Theme } from './types';
 import { Selector } from './components/Selector';
@@ -143,7 +143,15 @@ const App: React.FC = () => {
     
     try {
       const topic = storyDescription.trim() || (currentSuggestedTopics[0] || "A random adventure");
-      const newStory = await generateStory(language, level, topic, storyStyle, appLanguage);
+      const newStory = await generateStory(
+        language, 
+        level, 
+        topic, 
+        storyStyle, 
+        appLanguage,
+        showQuiz,
+        showFlashCards
+      );
       setStoryHistory([newStory]);
       setCurrentIndex(0);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -170,6 +178,8 @@ const App: React.FC = () => {
         `Continuation of: ${lastStory.title}`, 
         storyStyle, 
         appLanguage, 
+        showQuiz,
+        showFlashCards,
         lastStory.content
       );
       setStoryHistory(prev => [...prev, nextPart]);
@@ -239,34 +249,42 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
       
-      {/* App Header - Hidden when focused on desktop for immersion, kept on mobile */}
-      <header className={`sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-800 transition-all duration-300 ${isFocused ? 'lg:-translate-y-full' : 'translate-y-0'}`}>
+      {/* App Header - Enhanced Glassmorphism */}
+      <header className={`sticky top-0 z-40 w-full bg-white/70 backdrop-blur-lg border-b border-gray-200/50 dark:bg-gray-900/70 dark:border-gray-800/50 transition-all duration-500 ease-in-out ${isFocused ? 'lg:-translate-y-full opacity-0 lg:opacity-0' : 'translate-y-0 opacity-100'}`}>
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="rounded-xl bg-indigo-600 p-2 text-white shadow-lg">
+            {/* Logo Area */}
+            <div className="group flex items-center space-x-3 cursor-default">
+              <div className="relative rounded-xl bg-indigo-600 p-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:shadow-indigo-500/30">
                 <BookMarked className="h-6 w-6" />
+                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">{t.appTitle}</h1>
-                <p className="hidden text-xs font-medium text-gray-500 dark:text-gray-400 sm:block">{t.appSubtitle}</p>
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                  {t.appTitle}
+                </h1>
+                <p className="hidden text-xs font-medium text-gray-500 dark:text-gray-400 sm:block">
+                  {t.appSubtitle}
+                </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsLibraryOpen(true)}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-indigo-400 transition-colors"
+                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
                 title={t.savedStories}
               >
-                <Library className="h-6 w-6" />
+                <Library className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
               </button>
+              
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-indigo-400 transition-colors"
+                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
                 title={t.settingsTitle}
               >
-                <SettingsIcon className="h-6 w-6" />
+                <SettingsIcon className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
               </button>
             </div>
           </div>
@@ -293,6 +311,7 @@ const App: React.FC = () => {
                   onChange={setLanguage}
                   getLabel={(opt) => languageLabels[opt]}
                   disabled={isGenerating}
+                  icon={<Globe className="h-4 w-4 text-indigo-500" />}
                 />
 
                 <Selector<CEFRLevel>
@@ -302,6 +321,7 @@ const App: React.FC = () => {
                   onChange={setLevel}
                   getLabel={(opt) => levelDescriptions[opt]}
                   disabled={isGenerating}
+                  icon={<BarChart2 className="h-4 w-4 text-indigo-500" />}
                 />
 
                 <Selector<StoryStyle>
@@ -311,6 +331,7 @@ const App: React.FC = () => {
                   onChange={setStoryStyle}
                   getLabel={(opt) => storyStyleLabels[opt]}
                   disabled={isGenerating}
+                  icon={<Feather className="h-4 w-4 text-indigo-500" />}
                 />
 
                 <div className="space-y-2">

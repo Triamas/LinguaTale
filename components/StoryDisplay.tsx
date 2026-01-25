@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers } from 'lucide-react';
+import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap } from 'lucide-react';
 import { StoryResponse, StoryStyle } from '../types';
 
 interface StoryDisplayProps {
@@ -332,16 +333,22 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
         {/* Story Section */}
         <section onClick={handleBackgroundClick} className="pt-4">
-          <h2 className="mb-8 mr-12 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl text-center not-italic tracking-tight leading-tight">
+          <h2 className="mb-4 mr-12 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl text-center not-italic tracking-tight leading-tight">
             {story.title}
           </h2>
           
+          {story.shortDescription && (
+            <p className="mb-8 text-center text-lg italic text-gray-500 dark:text-gray-400 max-w-2xl mx-auto not-italic">
+              {story.shortDescription}
+            </p>
+          )}
+
           <div className={`prose max-w-none text-gray-800 dark:text-gray-200 ${theme.prose}`}>
             {paragraphs.map((paragraph, pIndex) => {
               const segments = parseParagraph(paragraph);
               
               return (
-                <p key={pIndex} className="mb-8 last:mb-0 text-justify">
+                <p key={pIndex} className="mb-6 last:mb-0 text-justify">
                   {segments.map((segment, sIndex) => {
                     if (segment.type === 'text') {
                       return <span key={sIndex}>{segment.content}</span>;
@@ -395,6 +402,25 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
             })}
           </div>
         </section>
+
+        {/* Grammar Note */}
+        {story.grammarPoint && (
+          <div className="mt-8 rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900/30 dark:bg-indigo-900/20">
+            <div className="flex items-start space-x-3">
+              <div className="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-900/40">
+                <GraduationCap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-300 mb-1">
+                  {translations.grammarPoint}
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed">
+                  {story.grammarPoint}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pagination Controls */}
         <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-8 not-italic">
@@ -550,10 +576,17 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                                 )}
                                 
                                 {hasAnswered && (
-                                <div className={`mt-4 flex items-center space-x-2 text-sm font-bold animate-fade-in ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {isCorrect && <Sparkles className="h-4 w-4" />}
-                                    <span>{isCorrect ? translations.correct : `${translations.incorrect} ${item.correctAnswer}`}</span>
-                                </div>
+                                    <div className="mt-4 space-y-2 animate-fade-in">
+                                        <div className={`flex items-center space-x-2 text-sm font-bold ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                            {isCorrect && <Sparkles className="h-4 w-4" />}
+                                            <span>{isCorrect ? translations.correct : `${translations.incorrect} ${item.correctAnswer}`}</span>
+                                        </div>
+                                        {item.explanation && (
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                                                {item.explanation}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                             );

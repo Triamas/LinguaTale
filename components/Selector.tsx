@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -8,6 +9,7 @@ interface SelectorProps<T extends string> {
   onChange: (value: T) => void;
   disabled?: boolean;
   getLabel?: (option: T) => string;
+  icon?: React.ReactNode;
 }
 
 export const Selector = <T extends string>({ 
@@ -16,11 +18,13 @@ export const Selector = <T extends string>({
   options, 
   onChange, 
   disabled,
-  getLabel 
+  getLabel,
+  icon
 }: SelectorProps<T>) => {
   return (
     <div className="flex flex-col space-y-2">
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+        {icon}
         {label}
       </label>
       <div className="relative">

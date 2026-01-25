@@ -37,13 +37,15 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
-  explanation?: string;
+  explanation: string;
 }
 
 export interface StoryResponse {
   title: string;
+  shortDescription?: string; // Context priming in L1
   content: string;
   englishTranslation: string;
+  grammarPoint?: string; // Explicit grammar noticing in L1
   quiz: QuizQuestion[];
   // Metadata for pedagogical verification (not shown to user)
   vocabularyMetadata: Record<string, {

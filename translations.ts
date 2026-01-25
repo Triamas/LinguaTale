@@ -47,7 +47,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     flashCards: "Flash Cards",
     enableFlashCards: "Enable Flash Cards",
     noVocabFound: "No highlighted vocabulary found in this story.",
-    clickToFlip: "Click to reveal translation"
+    clickToFlip: "Click to reveal translation",
+    grammarPoint: "Grammar Note"
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -94,7 +95,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     flashCards: "Sanastokortit",
     enableFlashCards: "Näytä sanastokortit",
     noVocabFound: "Tästä tarinasta ei löytynyt korostettua sanastoa.",
-    clickToFlip: "Klikkaa nähdäksesi käännös"
+    clickToFlip: "Klikkaa nähdäksesi käännös",
+    grammarPoint: "Kielioppihuomio"
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -141,6 +143,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     flashCards: "Thẻ ghi nhớ",
     enableFlashCards: "Bật thẻ ghi nhớ",
     noVocabFound: "Không tìm thấy từ vựng nổi bật trong truyện này.",
-    clickToFlip: "Nhấn để xem nghĩa"
+    clickToFlip: "Nhấn để xem nghĩa",
+    grammarPoint: "Điểm ngữ pháp"
   }
 };

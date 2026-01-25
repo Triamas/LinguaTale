@@ -1,58 +1,6 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { CEFRLevel, Language, StoryResponse, StoryStyle, AppLanguage } from "../types";
-
-// The response schema for the generated story content.
-const responseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    title: {
-      type: Type.STRING,
-      description: "The title of the story in the target language."
-    },
-    content: {
-      type: Type.STRING,
-      description: "The main body of the story in the target language. Use {word|translation} for highlights. MUST contain multiple paragraphs separated by newlines."
-    },
-    englishTranslation: {
-      type: Type.STRING,
-      description: "A full translation of the story."
-    },
-    quiz: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          question: { type: Type.STRING },
-          options: { type: Type.ARRAY, items: { type: Type.STRING } },
-          correctAnswer: { type: Type.STRING }
-        },
-        required: ["question", "options", "correctAnswer"]
-      }
-    },
-    vocabularyMetadata: {
-      type: Type.OBJECT,
-      description: "A mapping of every highlighted {word} to its verified CEFR level and reason for selection.",
-      properties: {
-        word: {
-           type: Type.OBJECT,
-           properties: {
-             level: { type: Type.STRING },
-             reason: { type: Type.STRING }
-           }
-        }
-      },
-      additionalProperties: {
-        type: Type.OBJECT,
-        properties: {
-          level: { type: Type.STRING },
-          reason: { type: Type.STRING }
-        }
-      }
-    }
-  },
-  required: ["title", "content", "englishTranslation", "quiz", "vocabularyMetadata"]
-};
 
 const getVocabCount = (level: CEFRLevel): string => {
   if (level.startsWith("A1")) return "25-35"; 
@@ -246,6 +194,8 @@ export const generateStory = async (
   topic: string,
   style: StoryStyle,
   outputLanguage: AppLanguage,
+  enableQuiz: boolean,
+  enableFlashCards: boolean,
   previousContext?: string
 ): Promise<StoryResponse> => {
   
@@ -255,6 +205,81 @@ export const generateStory = async (
   const vocabCount = getVocabCount(level);
   const strictLevelConstraints = getLevelConstraints(level);
   const styleConfig = getStyleConfig(style, level);
+
+  // Dynamic Schema Construction
+  const schemaProperties: any = {
+    title: {
+      type: Type.STRING,
+      description: "The title of the story in the target language."
+    },
+    shortDescription: {
+      type: Type.STRING,
+      description: "A 1-sentence summary of the story in the user's interface language (English, Finnish, or Vietnamese)."
+    },
+    content: {
+      type: Type.STRING,
+      description: enableFlashCards 
+        ? "The main body of the story in the target language. Use {word|translation} for highlights. MUST contain multiple paragraphs separated by newlines."
+        : "The main body of the story in the target language. Do NOT use {word|translation} tags. Plain text only. MUST contain multiple paragraphs separated by newlines."
+    },
+    englishTranslation: {
+      type: Type.STRING,
+      description: "A full translation of the story in the user's interface language."
+    },
+    grammarPoint: {
+      type: Type.STRING,
+      description: "A short explanation of a specific grammar rule or structure used in the story, written in the user's interface language."
+    }
+  };
+
+  const requiredFields = ["title", "shortDescription", "content", "englishTranslation", "grammarPoint"];
+
+  if (enableQuiz) {
+    schemaProperties.quiz = {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          question: { type: Type.STRING },
+          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+          correctAnswer: { type: Type.STRING },
+          explanation: { type: Type.STRING, description: "Explanation of why the answer is correct, in the user's interface language." }
+        },
+        required: ["question", "options", "correctAnswer", "explanation"]
+      }
+    };
+    requiredFields.push("quiz");
+  }
+
+  if (enableFlashCards) {
+    schemaProperties.vocabularyMetadata = {
+      type: Type.OBJECT,
+      description: "A mapping of every highlighted {word} to its verified CEFR level and reason for selection.",
+      properties: {
+        word: {
+           type: Type.OBJECT,
+           properties: {
+             level: { type: Type.STRING },
+             reason: { type: Type.STRING }
+           }
+        }
+      },
+      additionalProperties: {
+        type: Type.OBJECT,
+        properties: {
+          level: { type: Type.STRING },
+          reason: { type: Type.STRING }
+        }
+      }
+    };
+    requiredFields.push("vocabularyMetadata");
+  }
+
+  const responseSchema: Schema = {
+    type: Type.OBJECT,
+    properties: schemaProperties,
+    required: requiredFields
+  };
 
   const prompt = `
     Role: Senior Language Education Specialist & CEFR Auditor.
@@ -272,20 +297,26 @@ export const generateStory = async (
     3. DRAFTING: Create a story about "${topic}" in ${language}.
     4. AUDITING (CRITICAL): Scan the draft for grammar or vocabulary that is too complex for ${level}. Even if the style requires creativity, accessibility and level-adherence are the PRIORITY.
     5. REFINING: Rewrite any sentences that violate the ${level} constraints, even if it makes the style less "pure".
-    6. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty.
+    6. PEDAGOGICAL METADATA:
+       - Create a "shortDescription" in ${outputLanguage} that summarizes the story in 1 sentence to prime the learner.
+       - Identify one key "grammarPoint" used in the story (e.g., "Use of Past Simple") and explain it simply in ${outputLanguage}.
+       ${enableQuiz ? `- Create quiz explanations in ${outputLanguage}.` : ""}
+    ${enableFlashCards ? `7. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty. Use {word|translation} format in the content.` : "7. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
     
     CONSTRAINTS FOR ${level}:
     ${strictLevelConstraints}
     
-    VOCABULARY METADATA RULES:
+    ${enableFlashCards ? `VOCABULARY METADATA RULES:
     - For every highlighted {word|translation}, you MUST categorize its CEFR difficulty in the "vocabularyMetadata" object.
-    - Example: "vocabularyMetadata": { "exploration": { "level": "B2", "reason": "Academic abstract noun" } }
+    - Example: "vocabularyMetadata": { "exploration": { "level": "B2", "reason": "Academic abstract noun" } }` : ""}
     
     FORMAT:
     - Return JSON matching the schema.
     - Content must be in ${language}.
     - englishTranslation must be in ${outputLanguage}.
-    - quiz must be in ${language}.
+    - shortDescription must be in ${outputLanguage}.
+    - grammarPoint must be in ${outputLanguage}.
+    ${enableQuiz ? `- quiz questions must be in ${language}, but explanations must be in ${outputLanguage}.` : ""}
   `;
 
   try {
@@ -302,7 +333,14 @@ export const generateStory = async (
 
     const text = response.text;
     if (!text) throw new Error("Generation failed");
-    return JSON.parse(text.trim()) as StoryResponse;
+    
+    const parsed = JSON.parse(text.trim());
+    
+    // Fill defaults if disabled to match StoryResponse type
+    if (!enableQuiz) parsed.quiz = [];
+    if (!enableFlashCards) parsed.vocabularyMetadata = {};
+    
+    return parsed as StoryResponse;
   } catch (error) {
     console.error("API Error:", error);
     throw new Error("Could not generate story. Please try again.");

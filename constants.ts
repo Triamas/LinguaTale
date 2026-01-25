@@ -1,3 +1,4 @@
+
 import { Language, CEFRLevel, StoryStyle, AppLanguage } from './types';
 
 export const LANGUAGES: Language[] = [
@@ -27,12 +28,12 @@ export const LANGUAGE_LABELS: Record<AppLanguage, Record<Language, string>> = {
     "Slovak": "Slovakia", "Slovenian": "Slovenia", "Spanish": "Espanja", "Swedish": "Ruotsi", "Vietnamese": "Vietnam"
   },
   Vietnamese: {
-    "Bulgarian": "Tiếng Bungari", "Chinese": "Tiếng Trung", "Croatian": "Tiếng Croatia", "Czech": "Tiếng Séc", "Danish": "Tiếng Đan Mạch", 
-    "Dutch": "Tiếng Hà Lan", "English": "Tiếng Anh", "Estonian": "Tiếng Estonia", "Finnish": "Tiếng Phần Lan", 
-    "French": "Tiếng Pháp", "German": "Tiếng Đức", "Greek": "Tiếng Hy Lạp", "Hungarian": "Tiếng Hungary", 
-    "Irish": "Tiếng Ireland", "Italian": "Tiếng Ý", "Japanese": "Tiếng Nhật", "Korean": "Tiếng Hàn", "Latvian": "Tiếng Latvia", "Lithuanian": "Tiếng Litva", 
-    "Maltese": "Tiếng Malta", "Polish": "Tiếng Ba Lan", "Portuguese": "Tiếng Bồ Đào Nha", "Romanian": "Tiếng Rumani", 
-    "Slovak": "Tiếng Slovak", "Slovenian": "Tiếng Slovenia", "Spanish": "Tiếng Tây Ban Nha", "Swedish": "Tiếng Thụy Điển", "Vietnamese": "Tiếng Việt"
+    "Bulgarian": "Bungari", "Chinese": "Trung", "Croatian": "Croatia", "Czech": "Séc", "Danish": "Đan Mạch", 
+    "Dutch": "Hà Lan", "English": "Anh", "Estonian": "Estonia", "Finnish": "Phần Lan", 
+    "French": "Pháp", "German": "Đức", "Greek": "Hy Lạp", "Hungarian": "Hungary", 
+    "Irish": "Ireland", "Italian": "Ý", "Japanese": "Nhật", "Korean": "Hàn", "Latvian": "Latvia", "Lithuanian": "Litva", 
+    "Maltese": "Malta", "Polish": "Ba Lan", "Portuguese": "Bồ Đào Nha", "Romanian": "Rumani", 
+    "Slovak": "Slovak", "Slovenian": "Slovenia", "Spanish": "Tây Ban Nha", "Swedish": "Thụy Điển", "Vietnamese": "Việt"
   }
 };
 
