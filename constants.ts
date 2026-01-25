@@ -4,9 +4,8 @@ import { Language, CEFRLevel, StoryStyle, AppLanguage } from './types';
 export const LANGUAGES: Language[] = [
   "Bulgarian", "Chinese", "Croatian", "Czech", "Danish", "Dutch", "English",
   "Estonian", "Finnish", "French", "German", "Greek", "Hungarian",
-  "Irish", "Italian", "Japanese", "Korean", "Latvian", "Lithuanian", 
-  "Maltese", "Polish", "Portuguese", "Romanian", "Slovak", "Slovenian", 
-  "Spanish", "Swedish", "Vietnamese"
+  "Irish", "Italian", "Japanese", "Korean", "Latvian", "Lithuanian", "Maltese", "Polish",
+  "Portuguese", "Romanian", "Slovak", "Slovenian", "Spanish", "Swedish", "Vietnamese"
 ];
 
 export const APP_LANGUAGES: AppLanguage[] = ["English", "Finnish", "Vietnamese"];
@@ -16,34 +15,31 @@ export const LANGUAGE_LABELS: Record<AppLanguage, Record<Language, string>> = {
     "Bulgarian": "Bulgarian", "Chinese": "Chinese", "Croatian": "Croatian", "Czech": "Czech", "Danish": "Danish", 
     "Dutch": "Dutch", "English": "English", "Estonian": "Estonian", "Finnish": "Finnish", 
     "French": "French", "German": "German", "Greek": "Greek", "Hungarian": "Hungarian", 
-    "Irish": "Irish", "Italian": "Italian", "Japanese": "Japanese", "Korean": "Korean", 
-    "Latvian": "Latvian", "Lithuanian": "Lithuanian", "Maltese": "Maltese", "Polish": "Polish", 
-    "Portuguese": "Portuguese", "Romanian": "Romanian", "Slovak": "Slovak", "Slovenian": "Slovenian", 
-    "Spanish": "Spanish", "Swedish": "Swedish", "Vietnamese": "Vietnamese"
+    "Irish": "Irish", "Italian": "Italian", "Japanese": "Japanese", "Korean": "Korean", "Latvian": "Latvian", "Lithuanian": "Lithuanian", 
+    "Maltese": "Maltese", "Polish": "Polish", "Portuguese": "Portuguese", "Romanian": "Romanian", 
+    "Slovak": "Slovak", "Slovenian": "Slovenia", "Spanish": "Spanish", "Swedish": "Swedish", "Vietnamese": "Vietnamese"
   },
   Finnish: {
     "Bulgarian": "Bulgaria", "Chinese": "Kiina", "Croatian": "Kroatia", "Czech": "Tšekki", "Danish": "Tanska", 
     "Dutch": "Hollanti", "English": "Englanti", "Estonian": "Viro", "Finnish": "Suomi", 
     "French": "Ranska", "German": "Saksa", "Greek": "Kreikka", "Hungarian": "Unkari", 
-    "Irish": "Iiri", "Italian": "Italia", "Japanese": "Japani", "Korean": "Korea", 
-    "Latvian": "Latvia", "Lithuanian": "Liettua", "Maltese": "Malta", "Polish": "Puola", 
-    "Portuguese": "Portugali", "Romanian": "Romania", "Slovak": "Slovakia", "Slovenian": "Slovenia", 
-    "Spanish": "Espanja", "Swedish": "Ruotsi", "Vietnamese": "Vietnam"
+    "Irish": "Iiri", "Italian": "Italia", "Japanese": "Japani", "Korean": "Korea", "Latvian": "Latvia", "Lithuanian": "Liettua", 
+    "Maltese": "Malta", "Polish": "Puola", "Portuguese": "Portugali", "Romanian": "Romania", 
+    "Slovak": "Slovakia", "Slovenian": "Slovenia", "Spanish": "Espanja", "Swedish": "Ruotsi", "Vietnamese": "Vietnam"
   },
   Vietnamese: {
-    "Bulgarian": "Bungari", "Chinese": "Tiếng Trung", "Croatian": "Croatia", "Czech": "Séc", "Danish": "Đan Mạch", 
+    "Bulgarian": "Bungari", "Chinese": "Trung", "Croatian": "Croatia", "Czech": "Séc", "Danish": "Đan Mạch", 
     "Dutch": "Hà Lan", "English": "Anh", "Estonian": "Estonia", "Finnish": "Phần Lan", 
     "French": "Pháp", "German": "Đức", "Greek": "Hy Lạp", "Hungarian": "Hungary", 
-    "Irish": "Ireland", "Italian": "Ý", "Japanese": "Tiếng Nhật", "Korean": "Tiếng Hàn", 
-    "Latvian": "Latvia", "Lithuanian": "Litva", "Maltese": "Malta", "Polish": "Ba Lan", 
-    "Portuguese": "Bồ Đào Nha", "Romanian": "Rumani", "Slovak": "Slovak", "Slovenian": "Slovenia", 
-    "Spanish": "Tây Ban Nha", "Swedish": "Thụy Điển", "Vietnamese": "Tiếng Việt"
+    "Irish": "Ireland", "Italian": "Ý", "Japanese": "Nhật", "Korean": "Hàn", "Latvian": "Latvia", "Lithuanian": "Litva", 
+    "Maltese": "Malta", "Polish": "Ba Lan", "Portuguese": "Bồ Đào Nha", "Romanian": "Rumani", 
+    "Slovak": "Slovak", "Slovenian": "Slovenia", "Spanish": "Tây Ban Nha", "Swedish": "Thụy Điển", "Vietnamese": "Việt"
   }
 };
 
 export const LANGUAGE_THEMES: Record<Language, string> = {
   "Bulgarian": "from-green-600 to-red-600",
-  "Chinese": "from-red-700 to-yellow-500",
+  "Chinese": "from-red-600 to-yellow-500",
   "Croatian": "from-red-600 to-blue-700",
   "Czech": "from-blue-700 to-red-600",
   "Danish": "from-red-600 to-red-800",
@@ -57,8 +53,8 @@ export const LANGUAGE_THEMES: Record<Language, string> = {
   "Hungarian": "from-red-600 to-green-700",
   "Irish": "from-green-600 to-orange-500",
   "Italian": "from-green-600 to-red-600",
-  "Japanese": "from-red-600 to-pink-600",
-  "Korean": "from-blue-600 to-red-600",
+  "Japanese": "from-red-700 to-red-500",
+  "Korean": "from-red-600 to-blue-600",
   "Latvian": "from-red-900 to-red-700",
   "Lithuanian": "from-yellow-500 to-green-700",
   "Maltese": "from-red-600 to-gray-300",
@@ -69,7 +65,7 @@ export const LANGUAGE_THEMES: Record<Language, string> = {
   "Slovenian": "from-blue-600 to-red-600",
   "Spanish": "from-red-600 to-yellow-500",
   "Swedish": "from-blue-600 to-yellow-400",
-  "Vietnamese": "from-red-600 to-yellow-500"
+  "Vietnamese": "from-red-700 to-yellow-500"
 };
 
 export const LEVELS: CEFRLevel[] = [

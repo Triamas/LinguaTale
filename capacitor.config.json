@@ -1,9 +1,0 @@
-
-{
-  "appId": "com.linguatale.app",
-  "appName": "LinguaTale",
-  "webDir": "dist",
-  "server": {
-    "androidScheme": "https"
-  }
-}
