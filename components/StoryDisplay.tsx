@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap, ChevronDown } from 'lucide-react';
 import { StoryResponse, StoryStyle, CEFRLevel } from '../types';
@@ -123,12 +122,12 @@ const parseParagraph = (text: string): TextSegment[] => {
 
 /**
  * Returns accessible theme classes based on the story style.
- * Increased base typography size (prose-xl) and line-height (leading-relaxed/loose).
+ * Using "Lora" (serif) for story text to make it feel more book-like.
  */
 const getThemeForStyle = (style: StoryStyle) => {
-  // Using prose-xl on larger screens for better readability
-  const baseProse = "prose-lg md:prose-xl leading-loose";
-  const baseContainer = "w-full max-w-4xl mx-auto overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-xl ring-1 ring-gray-900/5 dark:ring-gray-800 transition-all duration-500 ease-in-out";
+  // Base prose styles with better font stack and leading
+  const baseProse = "prose-lg md:prose-xl leading-loose font-serif text-gray-800 dark:text-gray-200";
+  const baseContainer = "w-full max-w-4xl mx-auto overflow-hidden rounded-3xl bg-white dark:bg-[#111827] shadow-2xl shadow-indigo-200/20 ring-1 ring-gray-900/5 dark:ring-gray-800 transition-all duration-500 ease-in-out";
   
   switch (style) {
     case "Adventure":
@@ -138,8 +137,8 @@ const getThemeForStyle = (style: StoryStyle) => {
     case "Biography":
     case "Serious":
       return {
-        container: `${baseContainer} font-serif`,
-        headerBg: "bg-slate-800 dark:bg-slate-950",
+        container: `${baseContainer}`,
+        headerBg: "bg-slate-900 dark:bg-black",
         prose: `${baseProse} prose-slate dark:prose-invert`
       };
     
@@ -147,43 +146,43 @@ const getThemeForStyle = (style: StoryStyle) => {
     case "Romance":
     case "Fantasy":
       return {
-        container: `${baseContainer} font-serif`,
+        container: `${baseContainer}`,
         headerBg: "bg-indigo-900 dark:bg-indigo-950",
         prose: `${baseProse} prose-indigo dark:prose-invert`
       };
 
     case "News":
       return {
-        container: `${baseContainer} font-serif`,
+        container: `${baseContainer} font-sans`, // News usually Sans
         headerBg: "bg-gray-900 dark:bg-gray-950",
-        prose: `${baseProse} prose-gray dark:prose-invert leading-normal` // News is tighter
+        prose: `prose-lg md:prose-xl leading-normal text-gray-800 dark:text-gray-200 prose-gray dark:prose-invert font-sans` 
       };
     
     case "Sci-Fi":
       return {
         container: `${baseContainer} font-sans`,
         headerBg: "bg-blue-900 dark:bg-blue-950",
-        prose: `${baseProse} prose-blue dark:prose-invert`
+        prose: `prose-lg md:prose-xl leading-loose text-gray-800 dark:text-gray-200 prose-blue dark:prose-invert font-sans`
       };
 
     case "Dialogue":
       return {
         container: `${baseContainer} font-sans`,
-        headerBg: "bg-teal-700 dark:bg-teal-900",
-        prose: `${baseProse} prose-teal dark:prose-invert space-y-6` 
+        headerBg: "bg-teal-800 dark:bg-teal-900",
+        prose: `prose-lg md:prose-xl leading-loose text-gray-800 dark:text-gray-200 prose-teal dark:prose-invert font-sans space-y-6` 
       };
       
     case "Diary":
        return {
-         container: `${baseContainer} font-sans italic`,
-         headerBg: "bg-stone-600 dark:bg-stone-800",
-         prose: `${baseProse} prose-stone dark:prose-invert`
+         container: `${baseContainer}`,
+         headerBg: "bg-stone-700 dark:bg-stone-800",
+         prose: `${baseProse} prose-stone dark:prose-invert italic`
        };
 
     default: // Standard, Funny
       return {
-        container: `${baseContainer} font-sans`,
-        headerBg: "bg-indigo-600 dark:bg-indigo-800",
+        container: `${baseContainer}`,
+        headerBg: "bg-indigo-600 dark:bg-indigo-700",
         prose: `${baseProse} prose-indigo dark:prose-invert`
       };
   }
@@ -296,20 +295,29 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   return (
     <div className={`animate-fade-in-up ${theme.container}`}>
       {/* Header */}
-      <div className={`border-b border-gray-100 dark:border-gray-800 px-6 py-4 text-white transition-colors duration-300 ${theme.headerBg}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="h-5 w-5 opacity-80" />
-            <span className="font-medium opacity-90 not-italic tracking-wide">{language} • {styleLabel}</span>
+      <div className={`border-b border-white/10 px-6 py-5 text-white transition-colors duration-300 ${theme.headerBg} relative overflow-hidden`}>
+        {/* Subtle noise/texture overlay for premium feel */}
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+        
+        <div className="relative flex items-center justify-between z-10 font-sans">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm">
+               <BookOpen className="h-5 w-5 opacity-90" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg leading-tight tracking-tight">{language}</span>
+              <span className="text-xs font-medium opacity-70 uppercase tracking-wider">{styleLabel}</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-2">
-                <span className="opacity-75 text-xs font-bold uppercase tracking-wider not-italic">{translations.page} {currentPage}</span>
+             <div className="flex items-center gap-3 bg-black/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
+                <span className="opacity-90 text-xs font-bold uppercase tracking-wider">{translations.page} {currentPage}</span>
+                <div className="h-3 w-px bg-white/20" />
                 
                 {/* Level Selector Badge */}
                 <div className="relative group">
                   <span 
-                    className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold text-white not-italic ring-1 ring-white/30 cursor-pointer hover:bg-white/30 transition-colors"
+                    className="flex items-center gap-1 text-xs font-bold text-white cursor-pointer hover:text-indigo-200 transition-colors"
                     title="Change Level"
                   >
                       {level}
@@ -331,31 +339,28 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                 </div>
              </div>
              
-             {/* Divider */}
-             <div className="h-4 w-px bg-white/30" />
-
              {/* Focus Toggle */}
              <button 
                 onClick={onToggleFocus}
-                className="opacity-70 hover:opacity-100 transition-opacity focus:outline-none"
+                className="p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none text-white/80 hover:text-white"
                 title={isFocused ? "Exit Focus Mode" : "Enter Focus Mode"}
              >
-                {isFocused ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                {isFocused ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
              </button>
           </div>
         </div>
       </div>
 
-      <div className="relative space-y-10 px-6 py-10 sm:px-12">
+      <div className="relative space-y-12 px-6 py-12 sm:px-16">
         
         {/* Bookmark Button */}
-        <div className="absolute top-6 right-6 sm:right-10 z-10">
+        <div className="absolute top-8 right-6 sm:right-10 z-10">
           <button 
             onClick={onToggleBookmark}
-            className={`rounded-full p-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 shadow-sm ${
+            className={`rounded-full p-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
               isBookmarked 
-                ? "bg-amber-100 text-amber-600 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400" 
-                : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-800 dark:text-gray-500 dark:hover:text-gray-300"
+                ? "bg-amber-100 text-amber-600 shadow-amber-200 shadow-lg scale-110 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:shadow-none" 
+                : "bg-gray-50 text-gray-400 shadow-sm hover:bg-gray-100 hover:text-gray-600 hover:scale-105 dark:bg-gray-800 dark:text-gray-500 dark:hover:text-gray-300"
             }`}
             title={isBookmarked ? translations.bookmarked : translations.bookmarkStory}
           >
@@ -364,23 +369,23 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         </div>
 
         {/* Story Section */}
-        <section onClick={handleBackgroundClick} className="pt-4">
-          <h2 className="mb-4 mr-12 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl text-center not-italic tracking-tight leading-tight">
+        <section onClick={handleBackgroundClick} className="pt-2">
+          <h2 className="mb-6 mr-12 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-5xl text-center tracking-tight leading-tight font-display">
             {story.title}
           </h2>
           
           {story.shortDescription && (
-            <p className="mb-8 text-center text-lg italic text-gray-500 dark:text-gray-400 max-w-2xl mx-auto not-italic">
+            <p className="mb-10 text-center text-lg font-medium text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-sans leading-relaxed">
               {story.shortDescription}
             </p>
           )}
 
-          <div className={`prose max-w-none text-gray-800 dark:text-gray-200 ${theme.prose}`}>
+          <div className={`prose max-w-none ${theme.prose}`}>
             {paragraphs.map((paragraph, pIndex) => {
               const segments = parseParagraph(paragraph);
               
               return (
-                <p key={pIndex} className="mb-6 last:mb-0 text-justify">
+                <p key={pIndex} className="mb-8 last:mb-0 text-justify">
                   {segments.map((segment, sIndex) => {
                     if (segment.type === 'text') {
                       return <span key={sIndex}>{segment.content}</span>;
@@ -407,10 +412,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                             }
                           }}
                           className={`
-                            cursor-pointer rounded-[2px] transition-all outline-none px-[1px] not-italic
+                            cursor-pointer rounded-sm transition-all duration-200 outline-none px-[2px] mx-[1px]
                             ${isOpen 
-                              ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 font-medium shadow-sm' 
-                              : 'border-b-[1.5px] border-dotted border-gray-400/70 hover:border-gray-600 dark:border-gray-500/70 dark:hover:border-gray-400 hover:bg-black/5 dark:hover:bg-white/5'
+                              ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 font-semibold decoration-transparent' 
+                              : 'decoration-indigo-300/60 dark:decoration-indigo-500/60 underline underline-offset-4 decoration-2 hover:decoration-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
                             }
                           `}
                         >
@@ -418,14 +423,17 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                         </span>
                         {segment.post && <span>{segment.post}</span>}
                         
-                        {isOpen && (
-                          <div className="absolute bottom-full left-1/2 mb-3 z-50 -translate-x-1/2">
-                            <div className="animate-fade-in relative rounded-xl bg-gray-900 px-4 py-3 text-base font-medium text-white shadow-2xl whitespace-nowrap dark:bg-gray-800 dark:ring-1 dark:ring-white/10">
+                        {/* Tooltip */}
+                        <div 
+                           className={`absolute bottom-full left-1/2 mb-3 z-50 -translate-x-1/2 transition-all duration-200 ease-out origin-bottom ${
+                             isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
+                           }`}
+                        >
+                            <div className="relative rounded-2xl bg-[#0B1120] px-5 py-3 text-base font-semibold text-white shadow-2xl whitespace-nowrap dark:bg-white dark:text-gray-900 font-sans">
                               {segment.translation}
-                              <div className="absolute top-full left-1/2 -ml-2 -mt-1 h-4 w-4 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                              <div className="absolute top-full left-1/2 -ml-2 -mt-1 h-4 w-4 -translate-x-1/2 rotate-45 bg-[#0B1120] dark:bg-white"></div>
                             </div>
-                          </div>
-                        )}
+                        </div>
                       </span>
                     );
                   })}
@@ -437,16 +445,16 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
         {/* Grammar Note */}
         {story.grammarPoint && (
-          <div className="mt-8 rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900/30 dark:bg-indigo-900/20">
-            <div className="flex items-start space-x-3">
-              <div className="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-900/40">
-                <GraduationCap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="mt-12 rounded-2xl border-0 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm ring-1 ring-indigo-100 dark:from-indigo-900/20 dark:to-gray-800 dark:ring-indigo-900/30 font-sans">
+            <div className="flex items-start space-x-4">
+              <div className="rounded-xl bg-indigo-100 p-2.5 dark:bg-indigo-900/40 shrink-0">
+                <GraduationCap className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-300 mb-1">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900 dark:text-indigo-300 mb-2">
                   {translations.grammarPoint}
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed">
+                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed font-medium">
                   {story.grammarPoint}
                 </p>
               </div>
@@ -455,11 +463,11 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         )}
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-8 not-italic">
+        <div className="flex items-center justify-between pt-8 font-sans">
             <button
                 onClick={onPrevPage}
                 disabled={!canGoPrev || isGeneratingNext}
-                className="group flex items-center space-x-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="group flex items-center space-x-2 rounded-2xl border-0 bg-gray-100 px-6 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
             >
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                 <span>{translations.previousPage}</span>
@@ -468,10 +476,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
             <button
                 onClick={onNextPage}
                 disabled={!canGoNext || isGeneratingNext}
-                className={`group flex items-center space-x-2 rounded-lg px-6 py-2.5 text-sm font-bold shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed
+                className={`group flex items-center space-x-2 rounded-2xl px-8 py-3.5 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100
                     ${!hasNextPageInHistory 
-                        ? "bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-indigo-200 dark:shadow-none" 
-                        : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                        ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/30 shadow-indigo-500/20 dark:bg-indigo-500 dark:hover:bg-indigo-600" 
+                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-indigo-600 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
                     }
                 `}
             >
@@ -489,10 +497,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
             </button>
         </div>
 
-        <div className="flex justify-center border-t border-gray-100 dark:border-gray-800 pt-8 not-italic">
+        <div className="flex justify-center pt-4 font-sans">
             <button 
                 onClick={() => setShowTranslation(!showTranslation)}
-                className="flex items-center space-x-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none transition-colors"
+                className="flex items-center space-x-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none transition-colors rounded-full py-2 px-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
             >
                 <Languages className="h-4 w-4" />
                 <span>{showTranslation ? translations.hideTranslation : translations.showTranslation}</span>
@@ -500,25 +508,25 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         </div>
 
         {showTranslation && (
-            <div className="animate-fade-in rounded-xl bg-gray-50 p-6 text-gray-700 ring-1 ring-gray-900/5 not-italic dark:bg-gray-800 dark:text-gray-300 dark:ring-white/5 shadow-inner">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{translations.translationTitle}</h3>
-                <p className="whitespace-pre-line leading-relaxed text-lg">{story.englishTranslation}</p>
+            <div className="animate-fade-in rounded-3xl bg-gray-50 p-8 text-gray-700 ring-1 ring-gray-900/5 dark:bg-gray-800 dark:text-gray-300 dark:ring-white/5 shadow-inner">
+                <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{translations.translationTitle}</h3>
+                <p className="whitespace-pre-line leading-relaxed text-lg font-serif">{story.englishTranslation}</p>
             </div>
         )}
 
         {/* Tabbed Interface for Quiz/Flash Cards */}
         {(showQuiz || showFlashCards) && (
-            <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-8 not-italic">
+            <div className="mt-12 border-t border-gray-100 dark:border-gray-800 pt-10 font-sans">
                 
                 {/* Tabs */}
                 {hasTabs && (
-                    <div className="flex space-x-6 border-b border-gray-200 dark:border-gray-700 mb-8">
+                    <div className="flex space-x-8 border-b border-gray-200 dark:border-gray-700 mb-10">
                         <button
                             onClick={() => setActiveTab('quiz')}
-                            className={`pb-3 text-sm font-bold uppercase tracking-wide transition-all border-b-2 ${
+                            className={`pb-4 text-sm font-bold uppercase tracking-wide transition-all border-b-[3px] ${
                                 activeTab === 'quiz' 
                                     ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' 
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                             }`}
                         >
                             <div className="flex items-center gap-2">
@@ -528,10 +536,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                         </button>
                         <button
                             onClick={() => setActiveTab('flashcards')}
-                            className={`pb-3 text-sm font-bold uppercase tracking-wide transition-all border-b-2 ${
+                            className={`pb-4 text-sm font-bold uppercase tracking-wide transition-all border-b-[3px] ${
                                 activeTab === 'flashcards' 
                                     ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' 
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                             }`}
                         >
                              <div className="flex items-center gap-2">
@@ -544,8 +552,8 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
                 {/* Single Title if no tabs */}
                 {!hasTabs && (
-                    <div className="flex items-center space-x-3 mb-8">
-                         <div className="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-900/30">
+                    <div className="flex items-center space-x-3 mb-10">
+                         <div className="rounded-xl bg-indigo-100 p-2.5 dark:bg-indigo-900/30">
                             {showQuiz ? <HelpCircle className="h-6 w-6 text-indigo-600 dark:text-indigo-400" /> : <Layers className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />}
                          </div>
                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -563,15 +571,15 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                             const hasAnswered = selectedAnswer != null;
 
                             return (
-                            <div key={index} className="group relative rounded-2xl border border-gray-200 bg-gray-50/50 p-6 transition-all hover:bg-white hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-800 overflow-hidden">
-                                <p className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-200">
-                                <span className="mr-3 inline-block rounded-md bg-white px-2 py-0.5 text-sm font-bold text-indigo-600 shadow-sm ring-1 ring-gray-200 dark:bg-gray-700 dark:text-indigo-400 dark:ring-gray-600">{index + 1}</span>
+                            <div key={index} className="group relative rounded-3xl border border-gray-100 bg-white p-8 transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/50 hover:border-gray-200 dark:border-gray-800 dark:bg-[#151d30] dark:hover:border-gray-700 dark:hover:shadow-none overflow-hidden">
+                                <p className="mb-6 text-xl font-semibold text-gray-900 dark:text-gray-100 leading-snug">
+                                <span className="mr-4 inline-flex items-center justify-center rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-bold text-indigo-600 ring-1 ring-indigo-500/10 dark:bg-indigo-900/30 dark:text-indigo-400 dark:ring-indigo-500/20">{index + 1}</span>
                                 {item.question}
                                 </p>
                                 
                                 <div className="space-y-3">
                                 {item.options.map((option) => {
-                                    let buttonStyle = "border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700";
+                                    let buttonStyle = "border-gray-100 bg-gray-50 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300 dark:hover:border-indigo-800";
                                     let icon = null;
                                     
                                     const isSelected = selectedAnswer === option;
@@ -579,13 +587,13 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
                                     if (hasAnswered) {
                                     if (isCorrectOption) {
-                                        buttonStyle = "border-green-500 bg-green-50 text-green-900 font-semibold ring-1 ring-green-500 dark:bg-green-900/30 dark:text-green-300 dark:border-green-500";
-                                        icon = <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 animate-bounce" />;
+                                        buttonStyle = "border-green-500 bg-green-50 text-green-900 font-bold ring-1 ring-green-500 dark:bg-green-900/20 dark:text-green-300 dark:border-green-500/50";
+                                        icon = <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 animate-scale-in" />;
                                     } else if (isSelected) {
-                                        buttonStyle = "border-red-300 bg-red-50 text-red-900 dark:bg-red-900/30 dark:text-red-300 dark:border-red-500";
-                                        icon = <XCircle className="h-5 w-5 text-red-500 dark:text-red-400" />;
+                                        buttonStyle = "border-red-300 bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-300 dark:border-red-500/50";
+                                        icon = <XCircle className="h-5 w-5 text-red-500 dark:text-red-400 animate-scale-in" />;
                                     } else {
-                                        buttonStyle = "border-gray-200 bg-gray-50 text-gray-400 opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500";
+                                        buttonStyle = "border-gray-100 bg-gray-50 text-gray-400 opacity-50 dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-600";
                                     }
                                     }
 
@@ -594,7 +602,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                                         key={option}
                                         onClick={() => !hasAnswered && handleQuizOptionClick(index, option)}
                                         disabled={hasAnswered}
-                                        className={`flex w-full items-center justify-between rounded-xl border px-5 py-3.5 text-left text-base font-medium transition-all ${buttonStyle} ${!hasAnswered ? "active:scale-[0.99]" : ""}`}
+                                        className={`flex w-full items-center justify-between rounded-2xl border px-6 py-4 text-left text-base font-medium transition-all duration-200 ${buttonStyle} ${!hasAnswered ? "active:scale-[0.99]" : ""}`}
                                     >
                                         <span>{option}</span>
                                         {icon}
@@ -603,18 +611,14 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                                 })}
                                 </div>
                                 
-                                {hasAnswered && isCorrect && (
-                                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 animate-pulse bg-green-400/10" />
-                                )}
-                                
                                 {hasAnswered && (
-                                    <div className="mt-4 space-y-2 animate-fade-in">
-                                        <div className={`flex items-center space-x-2 text-sm font-bold ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    <div className="mt-6 space-y-3 animate-fade-in border-t border-gray-100 dark:border-gray-700 pt-6">
+                                        <div className={`flex items-center space-x-2 text-sm font-bold uppercase tracking-wider ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isCorrect && <Sparkles className="h-4 w-4" />}
                                             <span>{isCorrect ? translations.correct : `${translations.incorrect} ${item.correctAnswer}`}</span>
                                         </div>
                                         {item.explanation && (
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
                                                 {item.explanation}
                                             </p>
                                         )}
@@ -630,30 +634,34 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                 {showFlashCards && activeTab === 'flashcards' && (
                      <div className="animate-fade-in">
                         {vocabList.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                            <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
                                 {translations.noVocabFound}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                 {vocabList.map((item, index) => {
                                     const isFlipped = flippedCards.has(index);
                                     return (
                                         <div 
                                             key={index}
                                             onClick={() => toggleCardFlip(index)}
-                                            className="group perspective-1000 cursor-pointer h-40"
+                                            className="group perspective-1000 cursor-pointer h-48"
                                             title={translations.clickToFlip}
                                         >
                                             <div className={`relative h-full w-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                                                 
                                                 {/* Front */}
-                                                <div className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-indigo-300 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500/50">
-                                                    <span className="text-lg font-bold text-gray-800 dark:text-gray-100 text-center">{item.word}</span>
+                                                <div className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02] group-hover:border-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:group-hover:border-indigo-500/30">
+                                                    <span className="text-xl font-bold text-gray-800 dark:text-gray-100 text-center">{item.word}</span>
+                                                    <span className="mt-3 text-xs font-semibold text-gray-400 uppercase tracking-widest">{translations.clickToFlip}</span>
                                                 </div>
 
                                                 {/* Back */}
-                                                <div className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-600 text-white shadow-lg dark:bg-indigo-700">
-                                                    <span className="text-lg font-medium text-center">{item.translation}</span>
+                                                <div className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-xl dark:from-indigo-600 dark:to-indigo-800">
+                                                    <span className="text-xl font-bold text-center">{item.translation}</span>
+                                                    <div className="absolute bottom-4 right-4 opacity-50">
+                                                        <CheckCircle2 className="h-5 w-5" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

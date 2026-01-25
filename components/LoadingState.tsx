@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sparkles, PenTool, CheckCircle, BrainCircuit, FileText } from 'lucide-react';
 
@@ -94,49 +93,53 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ finish, onFinished }
   const currentText = LOADING_STAGES[currentStageIndex]?.text || "Finalizing...";
 
   return (
-    <div className="w-full max-w-3xl mx-auto overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-gray-800 animate-fade-in">
+    <div className="w-full max-w-3xl mx-auto overflow-hidden rounded-3xl bg-white shadow-2xl shadow-indigo-100 ring-1 ring-gray-900/5 dark:bg-[#111827] dark:ring-gray-800 dark:shadow-none animate-fade-in relative">
+      
       {/* Skeleton Header */}
-      <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-gray-800 dark:bg-gray-800/50">
+      <div className="border-b border-gray-100 bg-gray-50/50 px-8 py-6 dark:border-gray-800 dark:bg-gray-800/50">
         <div className="flex items-center justify-between">
-          <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-6 w-32 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
           <div className="flex gap-2">
-             <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-             <div className="h-5 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+             <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+             <div className="h-6 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-8 sm:px-8 space-y-8">
+      <div className="px-8 py-10 sm:px-12 space-y-10">
         {/* Title Skeleton */}
         <div className="flex justify-center">
-          <div className="h-8 w-2/3 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-10 w-3/4 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
         </div>
 
         {/* Paragraph Skeletons */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-3">
-              <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-              <div className="h-4 w-11/12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-              <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-              <div className="h-4 w-4/5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div key={i} className="space-y-4">
+              <div className="h-4 w-full rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="h-4 w-11/12 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="h-4 w-full rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="h-4 w-5/6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
             </div>
           ))}
         </div>
         
         {/* Footer / Loading Message & Progress Bar */}
-        <div className="flex flex-col items-center justify-center pt-8 space-y-6 max-w-md mx-auto w-full">
+        <div className="flex flex-col items-center justify-center pt-10 space-y-6 max-w-md mx-auto w-full">
           {/* Main Status Text */}
-          <div className="flex items-center gap-3 text-lg font-medium text-gray-700 dark:text-gray-200 animate-fade-in">
-             <CurrentIcon className="h-5 w-5 animate-bounce text-indigo-600 dark:text-indigo-400" />
-             <span key={currentText} className="animate-fade-in">
+          <div className="flex items-center gap-3 text-lg font-bold text-gray-800 dark:text-gray-100 animate-fade-in">
+             <div className="relative">
+                 <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-30 animate-pulse"></div>
+                 <CurrentIcon className="h-6 w-6 animate-bounce text-indigo-600 dark:text-indigo-400 relative z-10" />
+             </div>
+             <span key={currentText} className="animate-fade-in font-sans">
                {currentText}
              </span>
           </div>
 
-          <div className="w-full bg-gray-100 rounded-full h-1.5 dark:bg-gray-800 overflow-hidden">
+          <div className="w-full bg-gray-100 rounded-full h-2 dark:bg-gray-800 overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
             <div 
-              className="bg-indigo-600 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_10px_rgba(79,70,229,0.5)]" 
+              className="bg-indigo-600 h-full rounded-full transition-all duration-200 ease-out shadow-[0_0_15px_rgba(79,70,229,0.6)]" 
               style={{ width: `${progress}%` }} 
             />
           </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -22,26 +21,26 @@ export const Selector = <T extends string>({
   icon
 }: SelectorProps<T>) => {
   return (
-    <div className="flex flex-col space-y-2">
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+    <div className="flex flex-col space-y-2.5">
+      <label className="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
         {icon}
         {label}
       </label>
-      <div className="relative">
+      <div className="relative group">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
           disabled={disabled}
-          className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-500"
+          className="w-full appearance-none rounded-2xl border-0 bg-gray-50 px-4 py-3.5 pr-12 text-sm font-semibold text-gray-900 shadow-inner ring-1 ring-gray-200 transition-all hover:bg-gray-100 hover:ring-gray-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:ring-gray-100 dark:bg-gray-800 dark:text-white dark:ring-gray-700 dark:hover:bg-gray-700/80 dark:hover:ring-gray-600 dark:focus:bg-gray-800 dark:focus:ring-indigo-500/50"
         >
           {options.map((opt) => (
-            <option key={opt} value={opt} className="dark:bg-gray-800">
+            <option key={opt} value={opt} className="bg-white text-gray-900 dark:bg-gray-900 dark:text-white py-2">
               {getLabel ? getLabel(opt) : opt}
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
-          <ChevronDown className="h-4 w-4" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 transition-colors group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400">
+          <ChevronDown className="h-5 w-5" />
         </div>
       </div>
     </div>

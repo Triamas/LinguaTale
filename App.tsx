@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library, Globe, BarChart2, Feather, SquareStack } from 'lucide-react';
 import { LANGUAGES, LEVELS, LEVEL_SPECIFIC_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
@@ -355,19 +354,22 @@ const App: React.FC = () => {
   const isBookmarked = savedStories.some(s => s.id === currentStoryId);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans dark:bg-[#0B1120] dark:text-gray-100 transition-colors duration-300 selection:bg-indigo-500/20">
       
       {/* App Header */}
-      <header className={`sticky top-0 z-40 w-full bg-white/70 backdrop-blur-lg border-b border-gray-200/50 dark:bg-gray-900/70 dark:border-gray-800/50 transition-all duration-500 ease-in-out ${isFocused ? 'lg:-translate-y-full opacity-0 lg:opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <header className={`sticky top-0 z-40 w-full transition-all duration-500 ease-in-out ${isFocused ? 'lg:-translate-y-full opacity-0 lg:opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+        {/* Glass Effect Background */}
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 dark:bg-[#0B1120]/70 dark:border-gray-800/50 support-[backdrop-filter]:bg-white/60" />
+        
+        <div className="relative mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="group flex items-center space-x-3 cursor-default">
-              <div className="relative rounded-xl bg-indigo-600 p-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:shadow-indigo-500/30">
+              <div className="relative rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 group-hover:shadow-indigo-500/40 group-hover:scale-105">
                 <BookMarked className="h-6 w-6" />
-                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              <div className="flex flex-col">
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight font-display">
                   {t.appTitle}
                 </h1>
                 <p className="hidden text-xs font-medium text-gray-500 dark:text-gray-400 sm:block">
@@ -376,43 +378,46 @@ const App: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsFlashCardsOpen(true)}
-                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                className="group relative rounded-xl p-2.5 text-gray-500 transition-all duration-300 hover:bg-white hover:text-indigo-600 hover:shadow-md hover:shadow-gray-200/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-indigo-400 dark:hover:shadow-none"
                 title={t.savedFlashCards}
               >
-                <SquareStack className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
+                <SquareStack className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3" />
               </button>
 
               <button
                 onClick={() => setIsLibraryOpen(true)}
-                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                className="group relative rounded-xl p-2.5 text-gray-500 transition-all duration-300 hover:bg-white hover:text-indigo-600 hover:shadow-md hover:shadow-gray-200/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-indigo-400 dark:hover:shadow-none"
                 title={t.savedStories}
               >
-                <Library className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+                <Library className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3" />
               </button>
               
+              <div className="mx-2 h-6 w-px bg-gray-200 dark:bg-gray-800"></div>
+
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="group relative rounded-full p-2 text-gray-500 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                className="group relative rounded-xl p-2.5 text-gray-500 transition-all duration-300 hover:bg-white hover:text-indigo-600 hover:shadow-md hover:shadow-gray-200/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-indigo-400 dark:hover:shadow-none"
                 title={t.settingsTitle}
               >
-                <SettingsIcon className="h-6 w-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                <SettingsIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className={`mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 transition-all duration-300 ${isFocused ? 'pt-8' : ''}`}>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 relative">
+      <main className={`mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isFocused ? 'pt-8' : ''}`}>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 relative items-start">
           
           {/* Sidebar - Controls */}
-          <aside className={`transition-all duration-300 ${isFocused ? 'hidden opacity-0' : 'lg:col-span-4 xl:col-span-3 opacity-100'}`}>
-            <div className="sticky top-24 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-gray-800">
-              <div className={`bg-gradient-to-r ${themeGradient} px-6 py-4`}>
-                <h2 className="flex items-center text-lg font-semibold text-white">
+          <aside className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isFocused ? 'hidden opacity-0 translate-x-[-20px]' : 'lg:col-span-4 xl:col-span-3 opacity-100 translate-x-0'}`}>
+            <div className="sticky top-28 overflow-hidden rounded-3xl bg-white shadow-xl shadow-gray-200/50 ring-1 ring-gray-900/5 dark:bg-[#111827] dark:ring-gray-800 dark:shadow-none">
+              <div className={`bg-gradient-to-r ${themeGradient} px-6 py-5 relative overflow-hidden`}>
+                <div className="absolute inset-0 bg-white/10 opacity-50 backdrop-blur-3xl"></div>
+                <h2 className="relative flex items-center text-lg font-bold text-white font-display">
                   <Sparkles className="mr-2 h-5 w-5" /> {t.storySettings}
                 </h2>
               </div>
@@ -448,8 +453,8 @@ const App: React.FC = () => {
                   icon={<Feather className="h-4 w-4 text-indigo-500" />}
                 />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <div className="space-y-2.5">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Tag className="h-4 w-4 text-indigo-500" />
                     {t.storyDescription}
                   </label>
@@ -459,7 +464,7 @@ const App: React.FC = () => {
                     placeholder={t.descPlaceholder}
                     rows={3}
                     disabled={isGenerating}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:disabled:bg-gray-700"
+                    className="w-full rounded-2xl border-0 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-inner ring-1 ring-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:bg-gray-800/50 dark:ring-gray-700 dark:text-white dark:focus:bg-gray-800 dark:focus:ring-indigo-500/50 resize-none placeholder:text-gray-400"
                   />
                 </div>
 
@@ -471,7 +476,7 @@ const App: React.FC = () => {
                         key={topic}
                         onClick={() => handleTopicClick(topic)}
                         disabled={isGenerating}
-                        className="grow rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 text-center justify-center transition-colors hover:bg-indigo-100 disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+                        className="grow rounded-xl bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:ring-indigo-200 transition-all disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 dark:hover:ring-indigo-800"
                       >
                         {topic}
                       </button>
@@ -482,9 +487,9 @@ const App: React.FC = () => {
                 <button
                   onClick={handleGenerateNew}
                   disabled={isGenerating}
-                  className="flex w-full items-center justify-center space-x-2 rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed dark:shadow-none dark:hover:bg-indigo-500"
+                  className="group flex w-full items-center justify-center space-x-2 rounded-2xl bg-indigo-600 px-4 py-3.5 font-bold text-white shadow-lg shadow-indigo-500/30 transition-all hover:bg-indigo-700 hover:scale-[1.02] hover:shadow-indigo-500/40 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 dark:shadow-none dark:hover:bg-indigo-500"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   <span>{t.newStory}</span>
                 </button>
               </div>
@@ -492,9 +497,9 @@ const App: React.FC = () => {
           </aside>
 
           {/* Main Content - Story Display */}
-          <section className={`transition-all duration-500 ${isFocused ? 'lg:col-span-12' : 'lg:col-span-8 xl:col-span-9'}`}>
+          <section className={`transition-all duration-500 ${isFocused ? 'lg:col-span-12 max-w-5xl mx-auto' : 'lg:col-span-8 xl:col-span-9'}`}>
             {(isGenerating && (!currentStory || isRewriting)) ? (
-              <div className="mt-12">
+              <div className="mt-8 lg:mt-12">
                 <LoadingState 
                   message={isRewriting ? t.rewritingStory : t.startingStory} 
                   finish={isFinishingLoading}
@@ -502,8 +507,9 @@ const App: React.FC = () => {
                 />
               </div>
             ) : error ? (
-              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/20 dark:text-red-300 dark:ring-red-900/50">
-                {error}
+              <div className="rounded-2xl bg-red-50 p-6 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/20 dark:text-red-300 dark:ring-red-900/50 flex flex-col items-center text-center">
+                 <span className="text-2xl mb-2">⚠️</span>
+                 <p className="font-medium">{error}</p>
               </div>
             ) : currentStory ? (
               <StoryDisplay
@@ -530,12 +536,15 @@ const App: React.FC = () => {
                 onLevelChange={handleLevelChange}
               />
             ) : (
-              <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white p-12 text-center dark:bg-gray-900 dark:border-gray-800">
-                <div className="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">
-                  <BookMarked className="h-12 w-12" />
+              <div className="flex h-full min-h-[500px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 p-12 text-center dark:bg-gray-900/50 dark:border-gray-800">
+                <div className="mb-6 rounded-3xl bg-white p-6 shadow-xl shadow-indigo-100 ring-1 ring-gray-100 dark:bg-gray-800 dark:shadow-none dark:ring-gray-700">
+                  <div className="relative">
+                     <div className="absolute inset-0 animate-ping rounded-full bg-indigo-400 opacity-20"></div>
+                     <BookMarked className="h-12 w-12 text-indigo-600 dark:text-indigo-400 relative z-10" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.readyToRead}</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">{t.readyPrompt}</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white font-display tracking-tight">{t.readyToRead}</h3>
+                <p className="mt-3 text-lg text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">{t.readyPrompt}</p>
               </div>
             )}
           </section>
