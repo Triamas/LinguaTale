@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap, ChevronDown } from 'lucide-react';
 import { StoryResponse, StoryStyle, CEFRLevel } from '../types';
@@ -43,27 +44,29 @@ interface VocabItem {
 interface UITooltipProps {
   content: string;
   children: React.ReactNode;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-right';
   className?: string;
 }
 
 const UITooltip: React.FC<UITooltipProps> = ({ content, children, position = 'top', className = '' }) => {
-  const positionClasses = {
+  const positionClasses: Record<string, string> = {
     top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
     bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
     left: 'right-full top-1/2 -translate-y-1/2 mr-3',
     right: 'left-full top-1/2 -translate-y-1/2 ml-3',
+    'bottom-right': 'top-full right-0 mt-2',
   };
 
-  const arrowClasses = {
+  const arrowClasses: Record<string, string> = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-white border-x-transparent border-b-transparent',
     bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-white border-x-transparent border-t-transparent',
     left: 'left-full top-1/2 -translate-y-1/2 border-l-gray-900 dark:border-l-white border-y-transparent border-r-transparent',
     right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-white border-y-transparent border-l-transparent',
+    'bottom-right': 'bottom-full right-3 border-b-gray-900 dark:border-b-white border-x-transparent border-t-transparent',
   };
 
   return (
-    <div className={`group/tooltip relative flex items-center justify-center ${className}`}>
+    <div className={`group/tooltip relative flex items-center justify-center hover:z-50 ${className}`}>
       {children}
       <div 
         role="tooltip"
@@ -330,10 +333,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
   return (
     <div className={`animate-fade-in-up ${theme.container}`}>
-      {/* Header */}
-      <div className={`border-b border-white/10 px-6 py-5 text-white transition-colors duration-300 ${theme.headerBg} relative overflow-hidden`}>
+      {/* Header - Removed overflow-hidden and added z-30 to prevent tooltip clipping */}
+      <div className={`border-b border-white/10 px-6 py-5 text-white transition-colors duration-300 ${theme.headerBg} relative z-30`}>
         {/* Subtle noise/texture overlay for premium feel */}
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] pointer-events-none"></div>
         
         <div className="relative flex items-center justify-between z-10 font-sans">
           <div className="flex items-center space-x-3">
@@ -377,7 +380,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
              </div>
              
              {/* Focus Toggle */}
-             <UITooltip content={isFocused ? "Exit Focus Mode" : "Enter Focus Mode"} position="bottom">
+             <UITooltip content={isFocused ? "Exit Focus Mode" : "Enter Focus Mode"} position="bottom-right">
                <button 
                   onClick={onToggleFocus}
                   className="p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none text-white/80 hover:text-white"
@@ -434,7 +437,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                     const isOpen = activeTooltipId === uniqueId;
                     
                     return (
-                      <span key={sIndex} className="relative inline-block group whitespace-nowrap">
+                      <span key={sIndex} className={`relative inline-block group whitespace-nowrap ${isOpen ? 'z-40' : ''}`}>
                         {segment.pre && <span className="mr-[1px] opacity-90">{segment.pre}</span>}
                         <span
                           role="button"
@@ -553,13 +556,6 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
               </button>
             </UITooltip>
         </div>
-
-        {showTranslation && (
-            <div className="animate-fade-in rounded-3xl bg-gray-50 p-8 text-gray-700 ring-1 ring-gray-900/5 dark:bg-gray-800 dark:text-gray-300 dark:ring-white/5 shadow-inner">
-                <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{translations.translationTitle}</h3>
-                <p className="whitespace-pre-line leading-relaxed text-lg font-serif">{story.englishTranslation}</p>
-            </div>
-        )}
 
         {/* Tabbed Interface for Quiz/Flash Cards */}
         {(showQuiz || showFlashCards) && (
