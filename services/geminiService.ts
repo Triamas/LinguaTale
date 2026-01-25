@@ -137,49 +137,41 @@ const getLevelConstraints = (level: CEFRLevel): string => {
   switch (level) {
     case "A1.1":
       return `
-        LEVEL: A1.1 (BREAKTHROUGH)
-        - POSITIVE: Top 100 nouns only. Present Simple 'be' and 'have'.
-        - FORBIDDEN: NO 'but', NO 'because', NO Past tenses, NO Future tenses, NO adjectives (except colors/size).
+        - POSITIVE: Top 100 nouns only. Present Simple 'be' and 'have'. Short sentences.
+        - FORBIDDEN: NO 'but', NO 'because', NO Past tenses, NO Future tenses, NO adjectives (except colors/size), NO dependent clauses.
       `;
     case "A1.2":
       return `
-        LEVEL: A1.2 (BEGINNER)
-        - POSITIVE: Basic Present Simple. 'and', 'or'.
+        - POSITIVE: Basic Present Simple. Connectors: 'and', 'or'.
         - FORBIDDEN: NO Past Continuous, NO Perfect tenses, NO 'if' clauses, NO 'when' clauses.
       `;
     case "A1.3":
       return `
-        LEVEL: A1.3 (ELEMENTARY)
-        - POSITIVE: Past Simple (Regular verbs), Present Continuous. 'because'.
-        - FORBIDDEN: NO Passive voice, NO Conditional moods, NO Irregular past forms if obscure.
+        - POSITIVE: Past Simple (Regular verbs), Present Continuous. Connector: 'because'.
+        - FORBIDDEN: NO Passive voice, NO Conditional moods, NO Irregular past forms unless very common (went, saw).
       `;
     case "A2.1":
       return `
-        LEVEL: A2.1 (HIGH ELEMENTARY)
-        - POSITIVE: Future 'will', basic Comparatives.
+        - POSITIVE: Future 'will', basic Comparatives (better, bigger).
         - FORBIDDEN: NO Present Perfect, NO Modal verbs like 'should' or 'must'.
       `;
     case "A2.2":
       return `
-        LEVEL: A2.2 (PRE-INTERMEDIATE)
-        - POSITIVE: Present Perfect, Modal verbs, First Conditional.
+        - POSITIVE: Present Perfect, Modal verbs (can, must), First Conditional.
         - FORBIDDEN: NO Past Perfect, NO Third Conditional, NO Passive Voice.
       `;
     case "B1.1":
       return `
-        LEVEL: B1.1 (INTERMEDIATE)
         - POSITIVE: Simple Passive Voice, Second Conditional.
         - FORBIDDEN: NO Future Perfect, NO Subjunctive Mood, NO Inversion.
       `;
     case "B1.2":
       return `
-        LEVEL: B1.2 (HIGH INTERMEDIATE)
-        - POSITIVE: Past Perfect, Reported Speech, 'although'.
+        - POSITIVE: Past Perfect, Reported Speech, Connector: 'although'.
         - FORBIDDEN: NO Mixed Conditionals, NO complex Gerund vs Infinitive nuances.
       `;
     case "B2.1":
       return `
-        LEVEL: B2.1 (UPPER INTERMEDIATE)
         - POSITIVE: Future Continuous, Mixed Conditionals.
         - FORBIDDEN: NO Archaic vocabulary, NO overly formal academic structures.
       `;
@@ -295,50 +287,51 @@ export const generateStory = async (
     required: requiredFields
   };
 
-  // Determine the task prompt: Create new OR Rewrite existing
+  // Determine the task prompt
   const taskInstructions = contentToRewrite 
     ? `TASK: REWRITE the provided story content to be EXACTLY level ${level}.
        - Maintain the original plot, characters, and meaning.
        - Adjust vocabulary and grammar to match ${level}.
        - ORIGINAL CONTENT: "${contentToRewrite}"`
-    : `TASK: Generate a ${language} story at EXACTLY level ${level}.
+    : `TASK: Generate a ${language} story about "${topic}".
        ${previousContext ? `CONTEXT: This is a continuation of the previous part: "${previousContext}"` : ""}
-       DRAFTING: Create a story about "${topic}" in ${language}.`;
+       DRAFTING: Write a coherent narrative in ${language}.`;
 
-  const prompt = `
-    Role: Senior Language Education Specialist & CEFR Auditor.
+  // Define System Instruction: This sets the "Persona" and strict boundaries.
+  const systemInstruction = `
+    You are a Senior Language Education Specialist and CEFR Level Auditor.
+    Your mission is to generate stories that STRICTLY adhere to specific CEFR proficiency levels.
     
+    CRITICAL RULES:
+    1. NEVER use grammar or vocabulary above the target level.
+    2. If a creative choice requires complex language, you MUST simplify the idea instead of using the complex language.
+    3. The "Forbidden" constraints for the level are absolute.
+
+    TARGET LEVEL: ${level}
+    
+    LEVEL CONSTRAINTS:
+    ${strictLevelConstraints}
+  `;
+
+  // Define Prompt: The specific creative task.
+  const prompt = `
     ${taskInstructions}
 
-    SYSTEMIC WORKFLOW:
-    1. CONFIGURATION: Use the following style settings:
-       ${styleConfig.instructions}
-    2. LENGTH & STRUCTURE (STRICT):
-       - The story MUST be at least 3 distinct paragraphs long.
-       - The total length MUST be approximately 200-300 words (or appropriate length for ${level} to allow for 3 paragraphs).
-       - This is a strict requirement. Do not generate a single block of text. Use \\n\\n to separate paragraphs.
-    3. AUDITING (CRITICAL): Scan the draft for grammar or vocabulary that is too complex for ${level}. Even if the style requires creativity, accessibility and level-adherence are the PRIORITY.
-    4. REFINING: Rewrite any sentences that violate the ${level} constraints, even if it makes the style less "pure".
-    5. PEDAGOGICAL METADATA:
-       - Create a "shortDescription" in ${outputLanguage} that summarizes the story in 1 sentence to prime the learner.
-       - Identify one key "grammarPoint" used in the story (e.g., "Use of Past Simple") and explain it simply in ${outputLanguage}.
-       ${enableQuiz ? `- Create quiz explanations in ${outputLanguage}.` : ""}
-    ${enableFlashCards ? `6. HIGHLIGHTING: Select ${vocabCount} vocabulary words that are appropriate and challenging for level ${level}. Use {word|translation} format in the content.` : "6. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
+    CONFIGURATION:
+    ${styleConfig.instructions}
+
+    REQUIREMENTS:
+    1. LENGTH: 200-300 words. 3 distinct paragraphs. Use \\n\\n separators.
+    2. METADATA: 
+       - shortDescription in ${outputLanguage}
+       - grammarPoint in ${outputLanguage}
+       ${enableQuiz ? `- quiz explanations in ${outputLanguage}` : ""}
+    ${enableFlashCards ? `3. HIGHLIGHTING: Select ${vocabCount} words in {word|translation} format.` : "3. HIGHLIGHTING: None."}
+
+    ${enableFlashCards ? `VOCABULARY METADATA:
+    - Map every highlighted word to its CEFR level in 'vocabularyMetadata'.` : ""}
     
-    CONSTRAINTS FOR ${level}:
-    ${strictLevelConstraints}
-    
-    ${enableFlashCards ? `VOCABULARY METADATA RULES:
-    - For every highlighted {word|translation}, you MUST categorize its CEFR difficulty in the "vocabularyMetadata" object.
-    - Example: "vocabularyMetadata": { "exploration": { "level": "B2", "reason": "Academic abstract noun" } }` : ""}
-    
-    FORMAT:
-    - Return JSON matching the schema.
-    - Content must be in ${language}.
-    - englishTranslation must be in ${outputLanguage}.
-    - shortDescription must be in ${outputLanguage}.
-    - grammarPoint must be in ${outputLanguage}.
-    ${enableQuiz ? `- quiz questions must be in ${language}, but explanations must be in ${outputLanguage}.` : ""}
+    OUTPUT FORMAT: JSON matching the schema.
   `;
 
   try {
@@ -346,6 +339,7 @@ export const generateStory = async (
       model: "gemini-3-flash-preview", 
       contents: prompt,
       config: {
+        systemInstruction: systemInstruction,
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: styleConfig.temperature,
