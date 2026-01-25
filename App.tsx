@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookMarked, Sparkles, Send, Tag, Settings as SettingsIcon, Library, Globe, BarChart2, Feather, SquareStack } from 'lucide-react';
 import { LANGUAGES, LEVELS, LEVEL_SPECIFIC_TOPICS, STORY_STYLES, LEVEL_DESCRIPTIONS, STORY_STYLE_LABELS, APP_LANGUAGES, LANGUAGE_LABELS, LANGUAGE_THEMES } from './constants';
@@ -21,6 +22,13 @@ const STORAGE_KEYS = {
   THEME: 'linguatale_theme',
   SHOW_QUIZ: 'linguatale_show_quiz',
   SHOW_FLASHCARDS: 'linguatale_show_flashcards'
+};
+
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
 const App: React.FC = () => {
@@ -114,12 +122,13 @@ const App: React.FC = () => {
     }
   });
 
-  const [currentStoryId, setCurrentStoryId] = useState<string>(() => crypto.randomUUID());
+  const [currentStoryId, setCurrentStoryId] = useState<string>(generateId);
 
   const currentSuggestedTopics = useMemo(() => {
     return LEVEL_SPECIFIC_TOPICS[appLanguage]?.[level] || LEVEL_SPECIFIC_TOPICS["English"]?.["A1.1"] || [];
   }, [level, appLanguage]);
 
+  // Combined Storage Effect
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.APP_LANGUAGE, appLanguage);
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
@@ -128,7 +137,9 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
     localStorage.setItem(STORAGE_KEYS.SHOW_QUIZ, JSON.stringify(showQuiz));
     localStorage.setItem(STORAGE_KEYS.SHOW_FLASHCARDS, JSON.stringify(showFlashCards));
-  }, [appLanguage, language, level, storyStyle, theme, showQuiz, showFlashCards]);
+    localStorage.setItem(STORAGE_KEYS.SAVED_STORIES, JSON.stringify(savedStories));
+    localStorage.setItem(STORAGE_KEYS.SAVED_FLASHCARDS, JSON.stringify(savedFlashCards));
+  }, [appLanguage, language, level, storyStyle, theme, showQuiz, showFlashCards, savedStories, savedFlashCards]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -139,14 +150,7 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SAVED_STORIES, JSON.stringify(savedStories));
-  }, [savedStories]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SAVED_FLASHCARDS, JSON.stringify(savedFlashCards));
-  }, [savedFlashCards]);
-
+  // Sync saved status with current story ID
   useEffect(() => {
     if (savedStories.some(s => s.id === currentStoryId) && storyHistory.length > 0) {
       setSavedStories(prev => prev.map(s => 
@@ -174,7 +178,7 @@ const App: React.FC = () => {
     setStoryHistory([]);
     setCurrentIndex(-1);
     
-    setCurrentStoryId(crypto.randomUUID());
+    setCurrentStoryId(generateId());
     
     try {
       const topic = storyDescription.trim() || (currentSuggestedTopics[0] || "A random adventure");

@@ -188,6 +188,19 @@ const getLevelConstraints = (level: CEFRLevel): string => {
   }
 };
 
+/**
+ * Helper to sanitise JSON response from the model, stripping Markdown fences if present.
+ */
+const cleanJsonResponse = (text: string): string => {
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '');
+  }
+  return cleaned.trim();
+};
+
 export const generateStory = async (
   language: Language,
   level: CEFRLevel,
@@ -310,7 +323,7 @@ export const generateStory = async (
        - Create a "shortDescription" in ${outputLanguage} that summarizes the story in 1 sentence to prime the learner.
        - Identify one key "grammarPoint" used in the story (e.g., "Use of Past Simple") and explain it simply in ${outputLanguage}.
        ${enableQuiz ? `- Create quiz explanations in ${outputLanguage}.` : ""}
-    ${enableFlashCards ? `6. HIGHLIGHTING: Select ${vocabCount} words at or above ${level} difficulty. Use {word|translation} format in the content.` : "6. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
+    ${enableFlashCards ? `6. HIGHLIGHTING: Select ${vocabCount} vocabulary words that are appropriate and challenging for level ${level}. Use {word|translation} format in the content.` : "6. HIGHLIGHTING: Do NOT highlight any words. Provide plain text only."}
     
     CONSTRAINTS FOR ${level}:
     ${strictLevelConstraints}
@@ -336,14 +349,15 @@ export const generateStory = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: styleConfig.temperature,
-        thinkingConfig: { thinkingBudget: 4000 }
+        thinkingConfig: { thinkingBudget: 0 }
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("Generation failed");
+    if (!text) throw new Error("Generation failed: No response text");
     
-    const parsed = JSON.parse(text.trim());
+    const cleanedText = cleanJsonResponse(text);
+    const parsed = JSON.parse(cleanedText);
     
     // Fill defaults if disabled to match StoryResponse type
     if (!enableQuiz) parsed.quiz = [];
