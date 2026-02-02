@@ -1,3 +1,4 @@
+
 # LinguaTale - AI Language Story Generator
 
 LinguaTale is an intelligent language learning application that uses Google's latest Gemini models to generate short stories tailored to your exact proficiency level. It supports **28 languages** and strictly adheres to CEFR standards (A1 to C2), making it the perfect tool for reading practice at any stage of learning.
@@ -19,7 +20,7 @@ LinguaTale is an intelligent language learning application that uses Google's la
 ### Prerequisites
 
 *   Node.js (v18 or higher)
-*   A Google AI Studio API Key
+*   A Google Cloud Project or Google AI Studio account
 
 ### Installation
 
@@ -34,17 +35,25 @@ LinguaTale is an intelligent language learning application that uses Google's la
     npm install
     ```
 
-3.  **Configure API Key**
-    Create a `.env` file in the root directory and add your Google Gemini API key:
-    ```env
-    API_KEY=your_google_ai_studio_api_key_here
-    ```
-    *Note: Ensure your environment is configured to expose this key as `process.env.API_KEY` to the application.*
+3.  **Get a Google Gemini API Key**
+    To use this application, you need an API key from Google AI Studio.
+    1.  Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
+    2.  Sign in with your Google account.
+    3.  Click **Create API key**.
+    4.  Select a project or create a new one, then copy the generated key string.
 
-4.  **Run the application**
+4.  **Configure Environment**
+    Create a file named `.env` in the root directory of the project. Add your API key to this file:
+    ```env
+    API_KEY=your_actual_api_key_starts_with_AIza...
+    ```
+    *Note: The application code accesses the key via `process.env.API_KEY`.*
+
+5.  **Run the application**
     ```bash
     npm start
     ```
+    Open your browser to the local server address (usually `http://localhost:1234` or similar, depending on your bundler).
 
 ## Usage
 
