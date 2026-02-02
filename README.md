@@ -43,29 +43,29 @@ LinguaTale is an intelligent language learning application that uses Google's la
     4.  Select a project or create a new one, then copy the generated key string.
 
 4.  **Configure Environment**
-    Create a file named `.env` in the root directory of the project. Add your API key to this file:
+    Create a file named `.env` in the root directory of the project (next to `package.json` and `index.html`). Add your API key to this file:
     ```env
     API_KEY=your_actual_api_key_starts_with_AIza...
     ```
-    *Note: The application code accesses the key via `process.env.API_KEY`.*
+    
+    **Important:** 
+    *   Do not use quotes around the key unless it contains special characters.
+    *   Ensure there are no spaces around the `=` sign.
 
 5.  **Run the application**
     ```bash
     npm start
     ```
-    Open your browser to the local server address (usually `http://localhost:1234` or similar, depending on your bundler).
+    *   If you just created the `.env` file, you **must restart the server** for the key to be loaded.
+    *   Open your browser to the local server address (usually `http://localhost:1234` or `http://localhost:5173`).
 
-## Usage
+## Troubleshooting
 
-1.  **Select Target Language**: Choose the language you want to learn (e.g., Spanish, Japanese).
-2.  **Set Proficiency Level**: Specify your CEFR level (e.g., A2.1).
-3.  **Choose Style & Topic**: Select a genre (e.g., Mystery) and type a description or click a suggested topic tag.
-4.  **Generate**: Click "New Story".
-5.  **Read & Interact**: 
-    *   Click colored words for definitions.
-    *   Toggle "Show Full Translation" if you need help with the whole text.
-6.  **Quiz**: Answer the questions at the bottom to verify your understanding.
-7.  **Continue or Save**: Click "Next Page" to keep the story going, or the Bookmark icon to save it to your library.
+*   **Blank Screen?** Ensure you are running a build tool (like Vite) that supports TypeScript and JSX, not just opening the HTML file directly.
+*   **API Key Error?** 
+    1. Verify your `.env` file exists in the root folder.
+    2. Restart the terminal/server (`Ctrl+C` then `npm start`).
+    3. Check `vite.config.ts` ensures `process.env.API_KEY` is being defined.
 
 ## Technologies Used
 
@@ -73,6 +73,7 @@ LinguaTale is an intelligent language learning application that uses Google's la
 *   **AI Model**: Google Gemini 2.5/3.0 via `@google/genai` SDK
 *   **Icons**: Lucide React
 *   **State Management**: React Hooks & LocalStorage for persistence
+*   **Build Tool**: Vite
 
 ## License
 
