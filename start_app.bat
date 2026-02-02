@@ -29,4 +29,4 @@ echo Press Ctrl+C to stop the server.
 echo.
 
 :: npm start (Vite) is configured to open the browser automatically via vite.config.ts
-npm start
+npm run dev
