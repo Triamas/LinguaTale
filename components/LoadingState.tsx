@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Sparkles, PenTool, CheckCircle, BrainCircuit, FileText } from 'lucide-react';
+import { Sparkles, PenTool, CheckCircle, BrainCircuit, FileText, Glasses } from 'lucide-react';
 
 const LOADING_STAGES = [
   // Faster initial stages to match Gemini Flash speed
-  { threshold: 30, text: "Planning story structure...", icon: BrainCircuit, minTime: 800 },
-  { threshold: 60, text: "Drafting content...", icon: PenTool, minTime: 1500 },
-  { threshold: 80, text: "Verifying CEFR level compliance...", icon: CheckCircle, minTime: 1000 },
-  { threshold: 90, text: "Generating quiz & vocabulary...", icon: FileText, minTime: 1000 },
-  { threshold: 95, text: "Finalizing formatting...", icon: Sparkles, minTime: 1000 },
+  { threshold: 25, text: "Planning story structure...", icon: BrainCircuit, minTime: 800 },
+  { threshold: 50, text: "Drafting content...", icon: PenTool, minTime: 1500 },
+  { threshold: 65, text: "Generating quiz & vocabulary...", icon: FileText, minTime: 1000 },
+  { threshold: 85, text: "Proofreading & validating grammar...", icon: Glasses, minTime: 2000 }, // Validation Phase
+  { threshold: 95, text: "Finalizing formatting...", icon: Sparkles, minTime: 800 },
 ];
 
 interface LoadingStateProps {

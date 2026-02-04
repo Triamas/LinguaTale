@@ -287,6 +287,10 @@ export const generateStory = async (
     required: requiredFields
   };
 
+  // -------------------------------------------------------------------------
+  // STEP 1: GENERATION PHASE
+  // -------------------------------------------------------------------------
+
   // Determine the task prompt
   const taskInstructions = contentToRewrite 
     ? `TASK: REWRITE the provided story content to be EXACTLY level ${level}.
@@ -334,7 +338,10 @@ export const generateStory = async (
     OUTPUT FORMAT: JSON matching the schema.
   `;
 
+  let parsedResponse: StoryResponse;
+
   try {
+    // Phase 1: Create
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview", 
       contents: prompt,
@@ -351,15 +358,68 @@ export const generateStory = async (
     if (!text) throw new Error("Generation failed: No response text");
     
     const cleanedText = cleanJsonResponse(text);
-    const parsed = JSON.parse(cleanedText);
-    
-    // Fill defaults if disabled to match StoryResponse type
-    if (!enableQuiz) parsed.quiz = [];
-    if (!enableFlashCards) parsed.vocabularyMetadata = {};
-    
-    return parsed as StoryResponse;
+    parsedResponse = JSON.parse(cleanedText) as StoryResponse;
+
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("API Error (Generation Phase):", error);
     throw new Error("Could not generate story. Please try again.");
   }
+
+  // -------------------------------------------------------------------------
+  // STEP 2: VALIDATION & FIXING PHASE
+  // -------------------------------------------------------------------------
+  
+  try {
+    const validationSystemInstruction = `
+      You are a Strict Linguistic Editor and Proofreader for ${language}.
+      Your job is to take the provided JSON story object and rigorous check it for mistakes.
+      
+      VALIDATION RULES:
+      1. GRAMMAR: Fix any grammatical errors in the 'content' field.
+      2. NATURALNESS: Ensure phrases sound natural to a native speaker, not like robotic translation.
+      3. LEVEL COMPLIANCE: Ensure strict adherence to CEFR Level ${level}. If a phrase is too complex (e.g., using B2 grammar in an A1 story), simplify it immediately.
+      4. INTEGRITY: 
+         - Ensure 'englishTranslation' accurately reflects the corrected content.
+         - Ensure 'quiz' questions and answers are still valid based on the content.
+         - ${enableFlashCards ? "PRESERVE all {word|translation} tags exactly as they are unless the word itself is grammatically wrong." : "Do not add highlighting tags."}
+      
+      OUTPUT: Return the CLEANED and CORRECTED JSON object matching the exact same schema.
+    `;
+
+    const validationPrompt = `
+      Here is the drafted story object:
+      ${JSON.stringify(parsedResponse)}
+
+      Please review, edit, and fix any mistakes. Return the final polished JSON.
+    `;
+
+    const validationResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview", // Flash is fast enough for editing
+      contents: validationPrompt,
+      config: {
+        systemInstruction: validationSystemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+        temperature: 0.2, // Low temperature for precise editing
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+
+    const validatedText = validationResponse.text;
+    if (validatedText) {
+      const cleanedValidatedText = cleanJsonResponse(validatedText);
+      parsedResponse = JSON.parse(cleanedValidatedText) as StoryResponse;
+    }
+
+  } catch (validationError) {
+    // If validation fails, log it but return the original generated story rather than failing completely.
+    console.error("API Error (Validation Phase):", validationError);
+    // We proceed with the unvalidated story as a fallback
+  }
+
+  // Final cleanup of optional fields
+  if (!enableQuiz) parsedResponse.quiz = [];
+  if (!enableFlashCards) parsedResponse.vocabularyMetadata = {};
+  
+  return parsedResponse;
 };
