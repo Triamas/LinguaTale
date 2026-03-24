@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type, Schema, Modality } from "@google/genai";
 import { CEFRLevel, Language, StoryResponse, StoryStyle, AppLanguage } from "../types";
 
 const getVocabCount = (level: CEFRLevel): string => {
@@ -423,4 +423,32 @@ export const generateStory = async (
   if (!enableFlashCards) parsedResponse.vocabularyMetadata = {};
   
   return parsedResponse;
+};
+
+export const generateSpeech = async (
+  apiKey: string,
+  text: string,
+  voiceName: string = 'Kore'
+): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey });
+  
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: [{ parts: [{ text }] }],
+    config: {
+      responseModalities: [Modality.AUDIO],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName },
+        },
+      },
+    },
+  });
+
+  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  if (!base64Audio) {
+    throw new Error("Failed to generate speech audio");
+  }
+  
+  return base64Audio;
 };

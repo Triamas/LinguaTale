@@ -55,7 +55,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     removeFlashCard: "Remove card",
     apiKey: "Gemini API Key",
     apiKeyPlaceholder: "Enter your Gemini API key...",
-    apiKeyHelp: "Your key is stored locally in your browser."
+    apiKeyHelp: "Your key is stored locally in your browser.",
+    readAloud: "Read aloud",
+    stopReading: "Stop reading"
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -110,7 +112,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     removeFlashCard: "Poista kortti",
     apiKey: "Gemini API-avain",
     apiKeyPlaceholder: "Syötä Gemini API-avaimesi...",
-    apiKeyHelp: "Avain tallennetaan paikallisesti selaimeesi."
+    apiKeyHelp: "Avain tallennetaan paikallisesti selaimeesi.",
+    readAloud: "Lue ääneen",
+    stopReading: "Lopeta lukeminen"
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -165,6 +169,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     removeFlashCard: "Xóa thẻ",
     apiKey: "Khóa API Gemini",
     apiKeyPlaceholder: "Nhập khóa API Gemini của bạn...",
-    apiKeyHelp: "Khóa của bạn được lưu cục bộ trong trình duyệt."
+    apiKeyHelp: "Khóa của bạn được lưu cục bộ trong trình duyệt.",
+    readAloud: "Đọc to",
+    stopReading: "Dừng đọc"
   }
 };

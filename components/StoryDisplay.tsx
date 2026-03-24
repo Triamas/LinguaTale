@@ -1,8 +1,9 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap, ChevronDown } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { BookOpen, Languages, HelpCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2, Bookmark, Maximize2, Minimize2, Sparkles, Layers, GraduationCap, ChevronDown, Volume2, Square } from 'lucide-react';
 import { StoryResponse, StoryStyle, CEFRLevel } from '../types';
 import { LEVELS } from '../constants';
+import { generateSpeech } from '../services/geminiService';
 
 interface StoryDisplayProps {
   story: StoryResponse;
@@ -26,6 +27,7 @@ interface StoryDisplayProps {
   showFlashCards: boolean;
   onFlashCardToggle: (word: string, translation: string, isSaved: boolean) => void;
   onLevelChange: (level: CEFRLevel) => void;
+  apiKey: string;
 }
 
 interface TextSegment {
@@ -248,13 +250,24 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   showQuiz,
   showFlashCards,
   onFlashCardToggle,
-  onLevelChange
+  onLevelChange,
+  apiKey
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [activeTab, setActiveTab] = useState<'quiz' | 'flashcards'>('quiz');
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const utteranceQueueRef = useRef<string[]>([]);
+  const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   // Default to the first available tab if one is disabled
   useEffect(() => {
@@ -268,11 +281,170 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
     setActiveTooltipId(null);
     setQuizAnswers({});
     setFlippedCards(new Set());
+    stopSpeech();
     // If both are enabled, default back to quiz on new story load
     if (showQuiz) setActiveTab('quiz');
     else if (showFlashCards) setActiveTab('flashcards');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [story]);
+
+  // Initialize AudioContext
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return () => {
+      stopSpeech();
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close().catch(() => {});
+      }
+    };
+  }, []);
+
+  const stopSpeech = () => {
+    setIsPlaying(false);
+    isPlayingRef.current = false;
+    
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.stop();
+      } catch (e) {
+        // Ignore if already stopped
+      }
+      audioSourceRef.current.disconnect();
+      audioSourceRef.current = null;
+    }
+    
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    utteranceQueueRef.current = [];
+  };
+
+  const cleanTextForSpeech = (text: string) => {
+    // Remove vocab tags {word|translation} and just keep the word
+    return text.replace(/\{([^{}|]+?)\s*\|\s*([^{}|]+?)\}/g, '$1');
+  };
+
+  const getSpeechSettings = (level: string) => {
+    switch (level) {
+      case 'A1': return { rate: 0.7, pauseMs: 1500 };
+      case 'A2': return { rate: 0.8, pauseMs: 1200 };
+      case 'B1': return { rate: 0.9, pauseMs: 1000 };
+      case 'B2': return { rate: 0.95, pauseMs: 800 };
+      case 'C1': return { rate: 1.0, pauseMs: 600 };
+      case 'C2': return { rate: 1.0, pauseMs: 500 };
+      default: return { rate: 0.9, pauseMs: 1000 };
+    }
+  };
+
+  const playNextSentence = async () => {
+    if (!isPlayingRef.current || utteranceQueueRef.current.length === 0) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const text = utteranceQueueRef.current.shift();
+    if (!text) {
+      playNextSentence();
+      return;
+    }
+
+    try {
+      // Use a default voice, or map based on language if needed
+      // Gemini TTS currently has 'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'
+      const voiceName = 'Kore'; 
+      
+      const base64Audio = await generateSpeech(apiKey, text, voiceName);
+      
+      if (!isPlayingRef.current) return;
+      
+      const binaryString = window.atob(base64Audio);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      const audioCtx = audioContextRef.current;
+      if (!audioCtx) throw new Error("AudioContext not initialized");
+      
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
+      const { rate, pauseMs } = getSpeechSettings(level);
+      
+      let source: AudioBufferSourceNode;
+      
+      try {
+        const bufferCopy = bytes.buffer.slice(0);
+        const buffer = await audioCtx.decodeAudioData(bufferCopy);
+        source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+      } catch (e) {
+        // Fallback to raw PCM
+        const floats = new Float32Array(bytes.length / 2);
+        const dataView = new DataView(bytes.buffer);
+        for (let i = 0; i < floats.length; i++) {
+          const int16 = dataView.getInt16(i * 2, true);
+          floats[i] = int16 / 32768;
+        }
+        const buffer = audioCtx.createBuffer(1, floats.length, 24000);
+        buffer.getChannelData(0).set(floats);
+        source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+      }
+      
+      source.playbackRate.value = rate;
+      source.connect(audioCtx.destination);
+      
+      source.onended = () => {
+        if (isPlayingRef.current) {
+          if (utteranceQueueRef.current.length > 0) {
+            playNextSentence();
+          } else {
+            setIsPlaying(false);
+          }
+        }
+      };
+      
+      audioSourceRef.current = source;
+      source.start(0);
+      
+    } catch (error) {
+      console.error("Speech generation error:", error);
+      setIsPlaying(false);
+    }
+  };
+
+  const handleReadAloud = () => {
+    if (!apiKey) {
+      console.error("API key is required for text-to-speech");
+      return;
+    }
+
+    if (isPlaying) {
+      stopSpeech();
+      return;
+    }
+
+    const textToRead = cleanTextForSpeech(story.content);
+    
+    // Split text into sentences to allow for custom pauses between them
+    const sentences = textToRead
+      .replace(/([.!?])\s+/g, "$1|")
+      .split("|")
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    utteranceQueueRef.current = sentences.length > 0 ? sentences : [textToRead];
+    
+    setIsPlaying(true);
+    isPlayingRef.current = true;
+    playNextSentence();
+  };
 
   const paragraphs = useMemo(() => {
     if (!story.content) return [];
@@ -395,7 +567,20 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
       <div className="relative space-y-12 px-6 py-12 sm:px-16">
         
         {/* Bookmark Button */}
-        <div className="absolute top-8 right-6 sm:right-10 z-10">
+        <div className="absolute top-8 right-6 sm:right-10 z-10 flex flex-row gap-3">
+          <UITooltip content={isPlaying ? translations.stopReading : translations.readAloud} position="left">
+            <button 
+              onClick={handleReadAloud}
+              className={`rounded-full p-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                isPlaying 
+                  ? "bg-indigo-100 text-indigo-600 shadow-indigo-200 shadow-lg scale-110 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-400 dark:shadow-none animate-pulse" 
+                  : "bg-gray-50 text-gray-400 shadow-sm hover:bg-gray-100 hover:text-gray-600 hover:scale-105 dark:bg-gray-800 dark:text-gray-500 dark:hover:text-gray-300"
+              }`}
+            >
+              {isPlaying ? <Square className="h-5 w-5 fill-current" /> : <Volume2 className="h-5 w-5" />}
+            </button>
+          </UITooltip>
+          
           <UITooltip content={isBookmarked ? translations.bookmarked : translations.bookmarkStory} position="left">
             <button 
               onClick={onToggleBookmark}
@@ -487,25 +672,6 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
           </div>
         </section>
 
-        {/* Grammar Note */}
-        {story.grammarPoint && (
-          <div className="mt-12 rounded-2xl border-0 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm ring-1 ring-indigo-100 dark:from-indigo-900/20 dark:to-gray-800 dark:ring-indigo-900/30 font-sans">
-            <div className="flex items-start space-x-4">
-              <div className="rounded-xl bg-indigo-100 p-2.5 dark:bg-indigo-900/40 shrink-0">
-                <GraduationCap className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900 dark:text-indigo-300 mb-2">
-                  {translations.grammarPoint}
-                </h3>
-                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed font-medium">
-                  {story.grammarPoint}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Pagination Controls */}
         <div className="flex items-center justify-between pt-8 font-sans">
             <UITooltip content={translations.previousPage} position="top">
@@ -544,6 +710,25 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
               </button>
             </UITooltip>
         </div>
+
+        {/* Grammar Note */}
+        {story.grammarPoint && (
+          <div className="mt-12 rounded-2xl border-0 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm ring-1 ring-indigo-100 dark:from-indigo-900/20 dark:to-gray-800 dark:ring-indigo-900/30 font-sans">
+            <div className="flex items-start space-x-4">
+              <div className="rounded-xl bg-indigo-100 p-2.5 dark:bg-indigo-900/40 shrink-0">
+                <GraduationCap className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900 dark:text-indigo-300 mb-2">
+                  {translations.grammarPoint}
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed font-medium">
+                  {story.grammarPoint}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-center pt-4 font-sans">
             <UITooltip content={showTranslation ? "Hide English Translation" : "Show English Translation"} position="top">

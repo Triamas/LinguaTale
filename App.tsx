@@ -559,6 +559,7 @@ const App: React.FC = () => {
                 showFlashCards={showFlashCards}
                 onFlashCardToggle={handleFlashCardToggle}
                 onLevelChange={handleLevelChange}
+                apiKey={apiKey}
               />
             ) : (
               <div className="flex h-full min-h-[500px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 p-12 text-center dark:bg-gray-900/50 dark:border-gray-800">

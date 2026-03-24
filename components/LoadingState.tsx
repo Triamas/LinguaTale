@@ -8,7 +8,7 @@ const LOADING_STAGES = [
   { threshold: 50, text: "Drafting content...", icon: PenTool, minTime: 1500 },
   { threshold: 65, text: "Generating quiz & vocabulary...", icon: FileText, minTime: 1000 },
   { threshold: 85, text: "Proofreading & validating grammar...", icon: Glasses, minTime: 2000 }, // Validation Phase
-  { threshold: 95, text: "Finalizing formatting...", icon: Sparkles, minTime: 800 },
+  { threshold: 95, text: "Finalizing formatting...", icon: Sparkles, minTime: 200 },
 ];
 
 interface LoadingStateProps {
@@ -78,13 +78,13 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ finish, onFinished }
           if (old >= 100) {
             clearInterval(finishTimer);
             // Small delay before unmounting to let user see 100%
-            setTimeout(() => onFinished && onFinished(), 200);
+            setTimeout(() => onFinished && onFinished(), 50);
             return 100;
           }
           // Fast forward to 100
-          return old + 2; 
+          return old + 10; 
         });
-      }, 10); // Very fast ticks
+      }, 5); // Very fast ticks
 
       return () => clearInterval(finishTimer);
     }
