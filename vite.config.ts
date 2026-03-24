@@ -6,10 +6,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    define: {
-      // This strictly polyfills process.env.API_KEY with the string value from your .env file
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-    },
     // Ensure we can handle the absolute paths or specific plugins if needed, 
     // though the default setup usually handles TSX fine.
     server: {

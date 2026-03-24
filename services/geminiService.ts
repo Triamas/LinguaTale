@@ -194,6 +194,7 @@ const cleanJsonResponse = (text: string): string => {
 };
 
 export const generateStory = async (
+  apiKey: string,
   language: Language,
   level: CEFRLevel,
   topic: string,
@@ -206,7 +207,7 @@ export const generateStory = async (
 ): Promise<StoryResponse> => {
   
   // Create a new instance right before use to ensure latest API_KEY is used.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   const vocabCount = getVocabCount(level);
   const strictLevelConstraints = getLevelConstraints(level);

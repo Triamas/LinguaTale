@@ -3,21 +3,34 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "bin": "server.cjs",
+  "pkg": {
+    "assets": [
+      "dist/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:exe": "npm run build && pkg . --out-path build-exe",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-dom": "^19.2.3",
-    "react": "^19.2.3",
     "@google/genai": "^1.38.0",
+    "express": "^5.2.1",
     "lucide-react": "^0.563.0",
+    "open": "^11.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "vite": "^7.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "pkg": "^5.8.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

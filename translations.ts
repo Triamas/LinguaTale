@@ -52,7 +52,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     grammarPoint: "Grammar Note",
     savedFlashCards: "Saved Flash Cards",
     noSavedFlashCards: "No saved flash cards yet. Flip cards in stories to save them.",
-    removeFlashCard: "Remove card"
+    removeFlashCard: "Remove card",
+    apiKey: "Gemini API Key",
+    apiKeyPlaceholder: "Enter your Gemini API key...",
+    apiKeyHelp: "Your key is stored locally in your browser."
   },
   Finnish: {
     appTitle: "LinguaTale",
@@ -104,7 +107,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     grammarPoint: "Kielioppihuomio",
     savedFlashCards: "Tallennetut kortit",
     noSavedFlashCards: "Ei tallennettuja kortteja. Käännä kortteja tarinoissa tallentaaksesi ne.",
-    removeFlashCard: "Poista kortti"
+    removeFlashCard: "Poista kortti",
+    apiKey: "Gemini API-avain",
+    apiKeyPlaceholder: "Syötä Gemini API-avaimesi...",
+    apiKeyHelp: "Avain tallennetaan paikallisesti selaimeesi."
   },
   Vietnamese: {
     appTitle: "LinguaTale",
@@ -156,6 +162,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     grammarPoint: "Điểm ngữ pháp",
     savedFlashCards: "Thẻ đã lưu",
     noSavedFlashCards: "Chưa có thẻ nào. Lật thẻ trong truyện để lưu.",
-    removeFlashCard: "Xóa thẻ"
+    removeFlashCard: "Xóa thẻ",
+    apiKey: "Khóa API Gemini",
+    apiKeyPlaceholder: "Nhập khóa API Gemini của bạn...",
+    apiKeyHelp: "Khóa của bạn được lưu cục bộ trong trình duyệt."
   }
 };

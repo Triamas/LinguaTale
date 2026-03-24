@@ -15,6 +15,8 @@ interface SettingsModalProps {
   onShowQuizChange: (show: boolean) => void;
   showFlashCards: boolean;
   onShowFlashCardsChange: (show: boolean) => void;
+  apiKey: string;
+  onApiKeyChange: (key: string) => void;
   translations: Record<string, string>;
 }
 
@@ -48,11 +50,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onShowQuizChange,
   showFlashCards,
   onShowFlashCardsChange,
+  apiKey,
+  onApiKeyChange,
   translations
 }) => {
   const darkModeId = useId();
   const quizId = useId();
   const flashCardsId = useId();
+  const apiKeyId = useId();
   const titleId = useId();
 
   if (!isOpen) return null;
@@ -86,6 +91,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             options={APP_LANGUAGES}
             onChange={onLanguageChange}
           />
+          
+          <div className="space-y-2">
+            <label htmlFor={apiKeyId} className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              {translations.apiKey}
+            </label>
+            <input
+              id={apiKeyId}
+              type="password"
+              value={apiKey}
+              onChange={(e) => onApiKeyChange(e.target.value)}
+              placeholder={translations.apiKeyPlaceholder}
+              className="w-full rounded-xl border-0 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-inner ring-1 ring-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:bg-gray-800/50 dark:ring-gray-700 dark:text-white dark:focus:bg-gray-800 dark:focus:ring-indigo-500/50 placeholder:text-gray-400"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {translations.apiKeyHelp}
+            </p>
+          </div>
           
           <div className="space-y-6 pt-2">
              {/* Dark Mode Toggle */}

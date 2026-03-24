@@ -21,7 +21,8 @@ const STORAGE_KEYS = {
   SAVED_FLASHCARDS: 'linguatale_saved_flashcards',
   THEME: 'linguatale_theme',
   SHOW_QUIZ: 'linguatale_show_quiz',
-  SHOW_FLASHCARDS: 'linguatale_show_flashcards'
+  SHOW_FLASHCARDS: 'linguatale_show_flashcards',
+  API_KEY: 'linguatale_api_key'
 };
 
 const generateId = () => {
@@ -51,6 +52,10 @@ const App: React.FC = () => {
   const [showFlashCards, setShowFlashCards] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SHOW_FLASHCARDS);
     return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [apiKey, setApiKey] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.API_KEY) || '';
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -139,7 +144,8 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.SHOW_FLASHCARDS, JSON.stringify(showFlashCards));
     localStorage.setItem(STORAGE_KEYS.SAVED_STORIES, JSON.stringify(savedStories));
     localStorage.setItem(STORAGE_KEYS.SAVED_FLASHCARDS, JSON.stringify(savedFlashCards));
-  }, [appLanguage, language, level, storyStyle, theme, showQuiz, showFlashCards, savedStories, savedFlashCards]);
+    localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
+  }, [appLanguage, language, level, storyStyle, theme, showQuiz, showFlashCards, savedStories, savedFlashCards, apiKey]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -181,8 +187,13 @@ const App: React.FC = () => {
     setCurrentStoryId(generateId());
     
     try {
+      if (!apiKey) {
+        throw new Error("Please enter your Gemini API key in the settings.");
+      }
+      
       const topic = storyDescription.trim() || (currentSuggestedTopics[0] || "A random adventure");
       const newStory = await generateStory(
+        apiKey,
         language, 
         level, 
         topic, 
@@ -217,8 +228,13 @@ const App: React.FC = () => {
     setIsGenerating(true);
     setError(null);
     try {
+      if (!apiKey) {
+        throw new Error("Please enter your Gemini API key in the settings.");
+      }
+      
       const lastStory = storyHistory[storyHistory.length - 1];
       const nextPart = await generateStory(
+        apiKey,
         language, 
         level, 
         `Continuation of: ${lastStory.title}`, 
@@ -247,8 +263,13 @@ const App: React.FC = () => {
     setError(null);
     
     try {
+      if (!apiKey) {
+        throw new Error("Please enter your Gemini API key in the settings.");
+      }
+      
       const currentStoryContent = storyHistory[currentIndex].content;
       const rewrittenStory = await generateStory(
+        apiKey,
         language,
         newLevel,
         storyDescription || "Rewritten Story", 
@@ -566,6 +587,8 @@ const App: React.FC = () => {
         onShowQuizChange={setShowQuiz}
         showFlashCards={showFlashCards}
         onShowFlashCardsChange={setShowFlashCards}
+        apiKey={apiKey}
+        onApiKeyChange={setApiKey}
         translations={t}
       />
       
